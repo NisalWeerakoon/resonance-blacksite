@@ -1,0 +1,37 @@
+# Four member feature workflows
+
+## Team Lead — TRACE + character pipeline
+
+- Branch: `feature/team-lead-trace`
+- Owns: project integration, two original Blender blockouts, UV/material/import pipeline, TRACE prediction and Weighted A*.
+- First authentic commit: add TRACE intercept candidate data and a failing/passing scoring test.
+- Avoid: editing another member's sandbox or squashing away their contribution history.
+
+## World Builder — ECHO + environment
+
+- Branch: `feature/world-builder-echo`
+- Owns: six-room greybox, two route loops, D01–D07 portal IDs, lighting/texturing baseline, ECHO Utility AI and acoustic Dijkstra.
+- First authentic commit: greybox Loading Bay plus one alternate corridor, colliders, spawn, and room IDs.
+- Evidence: top-down screenshot and a door-open/closed acoustic-cost test.
+
+## Systems Engineer — BASTION + interactions
+
+- Branch: `feature/systems-bastion`
+- Owns: interactive door, throwable decoy, movable barricade, BASTION behaviour tree and cover score.
+- First authentic commit: door state component and isolated test scene.
+- Evidence: cover-choice comparison with visible score breakdown.
+
+## Agent Controller — RIFT + movement
+
+- Branch: `feature/controller-rift`
+- Owns: shared waypoint motor, rotation/animation hooks, RIFT GOAP actions and replanning.
+- First authentic commit: capsule PathFollower with arrival/blocked-path handling.
+- Evidence: door closure invalidates a current plan and produces a new valid action sequence.
+
+## Integration cadence
+
+- Pull requests target `develop`, never `main`.
+- Integrate at least once daily; do not wait for final models.
+- Each PR includes exact test steps and a short screen capture or screenshot when visual.
+- By October 17, stop adding scope. October 18 is the integrated-build target; October 19–20 are for stabilization and submission evidence.
+
