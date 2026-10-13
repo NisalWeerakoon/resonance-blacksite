@@ -3,16 +3,17 @@
 ## Team Lead — TRACE + character pipeline
 
 - Branch: `feature/team-lead-trace`
-- Owns: project integration, two original Blender blockouts, UV/material/import pipeline, TRACE prediction and Weighted A*.
+- Owns: project integration, original character modeling (including ECHO), UV/material/import pipeline, TRACE prediction and Weighted A*.
 - First authentic commit: add TRACE intercept candidate data and a failing/passing scoring test.
 - Avoid: editing another member's sandbox or squashing away their contribution history.
 
-## World Builder — ECHO + environment
+## World Builder — environment; ECHO AI assignment proposed
 
-- Branch: `feature/world-builder-echo`
-- Owns: six-room greybox, two route loops, D01–D07 portal IDs, lighting/texturing baseline, ECHO Utility AI and acoustic Dijkstra.
-- First authentic commit: greybox Loading Bay plus one alternate corridor, colliders, spawn, and room IDs.
-- Evidence: top-down screenshot and a door-open/closed acoustic-cost test.
+- World branch: `feature/world-builder` for the completed level upload and follow-up environment changes.
+- Separate AI branch: `feature/world-builder-echo` if the team confirms this member owns ECHO's Utility AI and acoustic Dijkstra.
+- Owns the six-room greybox, two route loops, D01–D07 portal IDs, and lighting/texturing baseline. Character modeling is assigned to the Team Lead.
+- First authentic commit: commit the already completed world scene, its assets and `.meta` files. The commit must reflect her actual work.
+- Evidence: top-down screenshot for the world; a door-open/closed acoustic-cost test if she also takes ECHO AI.
 
 ## Systems Engineer — BASTION + interactions
 

@@ -25,6 +25,7 @@ After packages resolve, run **BLACKSITE → Initialize URP and prototype scenes*
 - `main`: demonstrable builds only; enable branch protection in GitHub settings when collaborator access is configured.
 - `develop`: daily integration branch.
 - `feature/<owner>-<scope>`: one bounded feature per branch.
+- `feature/world-builder`: the World Builder's level upload. `feature/world-builder-echo` is reserved for ECHO AI if that proposed ownership is confirmed; it does not mean ECHO character art.
 - Merge through pull requests into `develop`; require one teammate review where schedule permits.
 
 See [CONTRIBUTING.md](CONTRIBUTING.md), [docs/ARCHITECTURE.md](docs/ARCHITECTURE.md), and [docs/TEAM-WORKFLOWS.md](docs/TEAM-WORKFLOWS.md).
