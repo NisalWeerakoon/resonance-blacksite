@@ -4,6 +4,7 @@
 
 - Branch: `feature/team-lead-trace`
 - Owns: project integration, original character modeling (including ECHO), UV/material/import pipeline, TRACE prediction and Weighted A*.
+- Final integration owner: reviews member pull requests, resolves cross-feature conflicts, runs the full Unity smoke test, fixes integration defects, and decides when `develop` is ready to merge into `main` for the October 18 build and October 21 submission.
 - First authentic commit: add TRACE intercept candidate data and a failing/passing scoring test.
 - Avoid: editing another member's sandbox or squashing away their contribution history.
 
@@ -34,5 +35,6 @@
 - Pull requests target `develop`, never `main`.
 - Integrate at least once daily; do not wait for final models.
 - Each PR includes exact test steps and a short screen capture or screenshot when visual.
+- Each member fixes defects in their own feature first. The Team Lead owns cross-feature failures and final release validation; teammates must still provide test evidence and respond to review findings.
 - By October 17, stop adding scope. October 18 is the integrated-build target; October 19–20 are for stabilization and submission evidence.
 
