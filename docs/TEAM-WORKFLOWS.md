@@ -7,10 +7,10 @@
 - First authentic commit: add TRACE intercept candidate data and a failing/passing scoring test.
 - Avoid: editing another member's sandbox or squashing away their contribution history.
 
-## World Builder — environment; ECHO AI assignment proposed
+## World Builder — environment + ECHO AI
 
 - World branch: `feature/world-builder` for the completed level upload and follow-up environment changes.
-- Separate AI branch: `feature/world-builder-echo` if the team confirms this member owns ECHO's Utility AI and acoustic Dijkstra.
+- Separate AI branch: `feature/world-builder-echo` for ECHO's Utility AI and acoustic Dijkstra. This agent is her Intelligent Systems contribution.
 - Owns the six-room greybox, two route loops, D01–D07 portal IDs, and lighting/texturing baseline. Character modeling is assigned to the Team Lead.
 - First authentic commit: commit the already completed world scene, its assets and `.meta` files. The commit must reflect her actual work.
 - Evidence: top-down screenshot for the world; a door-open/closed acoustic-cost test if she also takes ECHO AI.
