@@ -10,6 +10,8 @@
 - Unity Editor compilation: **not run** — no Unity Editor installation was detected on this machine.
 - Starter ZIP import: superseded by user request to recreate the foundation directly.
 - A* graph planner, player controller, and editor scene/URP initializer: source added, **not editor-verified**.
+- TRACE observation, prediction, intercept scoring, Weighted A* route selection and EditMode tests: source added on the Team Lead feature branch, **not editor-verified**.
+- BASTION/TRACE Blender blockout generator: script added, **not run** because Blender is unavailable on this machine.
 
 Open the repository in the pinned editor, allow package resolution, run **BLACKSITE → Initialize URP and prototype scenes**, then record the Console and test runner results here. Commit the generated scenes, URP assets, and their `.meta` files to `develop`.
 

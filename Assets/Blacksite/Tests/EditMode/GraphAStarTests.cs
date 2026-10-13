@@ -28,8 +28,11 @@ namespace Blacksite.Tests
         public void ClosedPortalForcesAlternateRoute()
         {
             var path = new List<string>();
-            Assert.IsTrue(GraphAStar.TryFind(new TestGraph(), "A", "D", new HashSet<string> { "D01" }, path));
+            Assert.IsTrue(GraphAStar.TryFind(new TestGraph(), "A", "D",
+                new HashSet<string> { "D01" }, path, out float cost, out int expanded));
             CollectionAssert.AreEqual(new[] { "A", "C", "D" }, path);
+            Assert.AreEqual(4f, cost);
+            Assert.GreaterOrEqual(expanded, 3);
         }
     }
 }

@@ -28,4 +28,6 @@ Assets/AssetStoreTools*
 *.apk
 *.aab
 *.unitypackage
+__pycache__/
+*.pyc
 

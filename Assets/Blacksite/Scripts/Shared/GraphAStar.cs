@@ -27,12 +27,22 @@ namespace Blacksite.Shared
     {
         // Use an admissible heuristic for an optimal route. Weight > 1 enables Weighted A*.
         public static bool TryFind(IWaypointGraph graph, string start, string goal,
-            IReadOnlySet<string> blockedPortals, List<string> result, float heuristicWeight = 1f)
+            ISet<string> blockedPortals, List<string> result, float heuristicWeight = 1f)
+        {
+            return TryFind(graph, start, goal, blockedPortals, result,
+                out _, out _, heuristicWeight);
+        }
+
+        public static bool TryFind(IWaypointGraph graph, string start, string goal,
+            ISet<string> blockedPortals, List<string> result,
+            out float totalCost, out int nodesExpanded, float heuristicWeight = 1f)
         {
             if (graph == null) throw new ArgumentNullException(nameof(graph));
             if (result == null) throw new ArgumentNullException(nameof(result));
             if (heuristicWeight < 1f) throw new ArgumentOutOfRangeException(nameof(heuristicWeight));
             result.Clear();
+            totalCost = 0f;
+            nodesExpanded = 0;
             if (string.IsNullOrEmpty(start) || string.IsNullOrEmpty(goal)) return false;
             var open = new List<string> { start };
             var closed = new HashSet<string>();
@@ -51,8 +61,10 @@ namespace Blacksite.Shared
                 }
                 string current = open[bestIndex];
                 open.RemoveAt(bestIndex);
+                nodesExpanded++;
                 if (current == goal)
                 {
+                    totalCost = cost[current];
                     for (string node = goal; node != start; node = previous[node]) result.Add(node);
                     result.Add(start);
                     result.Reverse();
@@ -71,6 +83,7 @@ namespace Blacksite.Shared
                     if (!open.Contains(edge.Destination)) open.Add(edge.Destination);
                 }
             }
+            totalCost = float.PositiveInfinity;
             return false;
         }
     }
