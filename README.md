@@ -12,7 +12,7 @@ A four-person Unity 6.3 LTS URP project combining a tactical sci-fi FPS with fou
 
 ```text
 git lfs install
-git clone <repository-url>
+git clone https://github.com/NisalWeerakoon/resonance-blacksite.git
 cd resonance-blacksite
 git switch develop
 ```
@@ -22,7 +22,7 @@ After packages resolve, run **BLACKSITE → Initialize URP and prototype scenes*
 
 ## Branch model
 
-- `main`: protected, demonstrable builds only.
+- `main`: demonstrable builds only; enable branch protection in GitHub settings when collaborator access is configured.
 - `develop`: daily integration branch.
 - `feature/<owner>-<scope>`: one bounded feature per branch.
 - Merge through pull requests into `develop`; require one teammate review where schedule permits.
