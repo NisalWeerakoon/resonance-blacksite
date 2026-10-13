@@ -8,7 +8,8 @@
 - Assembly boundaries and starter C# contracts: created.
 - Git LFS patterns: created; local Git LFS executable detected.
 - Unity Editor compilation: **not run** — no Unity Editor installation was detected on this machine.
-- Starter ZIP import: **not run** — no RESONANCE/BLACKSITE Unity ZIP was present in the transferred conversation files.
+- Starter ZIP import: superseded by user request to recreate the foundation directly.
+- A* graph planner, player controller, and editor scene/URP initializer: source added, **not editor-verified**.
 
-Before merging to `main`, open the repository in the pinned editor, allow package resolution, configure/create the URP renderer asset if Unity does not generate it automatically, and record the Console result here.
+Open the repository in the pinned editor, allow package resolution, run **BLACKSITE → Initialize URP and prototype scenes**, then record the Console and test runner results here. Commit the generated scenes, URP assets, and their `.meta` files to `develop`.
 

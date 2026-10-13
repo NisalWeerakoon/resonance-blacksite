@@ -18,6 +18,7 @@ git switch develop
 ```
 
 Open the repository root in Unity Hub. Do not commit `Library`, `Temp`, `Logs`, generated IDE files, or local settings.
+After packages resolve, run **BLACKSITE → Initialize URP and prototype scenes**. This creates the URP assets, the integration greybox, and four member sandbox scenes. Commit those generated files and their `.meta` files to `develop` after verifying the Unity Console.
 
 ## Branch model
 
@@ -36,5 +37,5 @@ See [CONTRIBUTING.md](CONTRIBUTING.md), [docs/ARCHITECTURE.md](docs/ARCHITECTURE
 - **October 19–20:** stability, profiling, evidence capture, video, and viva preparation.
 - **October 21, 2026:** Graphics submission.
 
-Compilation status: **not yet verified in Unity Editor**. The current machine does not have Unity installed; see `docs/VALIDATION.md`.
+Compilation status: **not yet verified in Unity Editor**. The current machine does not have Unity installed; see `docs/VALIDATION.md`. The player prototype uses the classic Input Manager; set Active Input Handling to **Both** or **Input Manager (Old)** if Unity prompts for it.
 
