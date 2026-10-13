@@ -43,7 +43,8 @@ namespace Blacksite.Agents.Trace
             }
             foreach (Link link in links)
             {
-                if (link == null || !adjacency.ContainsKey(link.from) ||
+                if (link == null || string.IsNullOrEmpty(link.from) || string.IsNullOrEmpty(link.to) ||
+                    !adjacency.ContainsKey(link.from) ||
                     !adjacency.ContainsKey(link.to)) continue;
                 float cost = Mathf.Max(link.cost,
                     Vector3.Distance(positions[link.from], positions[link.to]));
