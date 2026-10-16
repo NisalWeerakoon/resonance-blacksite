@@ -1,0 +1,44 @@
+BLACKSITE-7 World Builder Visual / Structural Audit
+Scene: updated
+Date: 2026-10-11 21:57:44
+NOTE: Structural checks are not a substitute for actual Play Mode, profiler and full gameplay tests.
+PASS  World_Static exists
+PASS  Corridors exists
+PASS  Room ENTRY has a floor
+PASS  Room ENTRY floor has original physics collider
+PASS  Room HUB has a floor
+PASS  Room HUB floor has original physics collider
+PASS  Room ACOUSTIC has a floor
+PASS  Room ACOUSTIC floor has original physics collider
+PASS  Room SECURITY has a floor
+PASS  Room SECURITY floor has original physics collider
+PASS  Room MAINT has a floor
+PASS  Room MAINT floor has original physics collider
+PASS  Room CORE has a floor
+PASS  Room CORE floor has original physics collider
+PASS  Corridor object ENTRY_HUB
+PASS  Corridor object HUB_ACOUSTIC
+PASS  Corridor object ACOUSTIC_SECURITY
+PASS  Corridor object SECURITY_MAINT
+PASS  Corridor object HUB_MAINT
+PASS  Corridor object MAINT_CORE
+PASS  Corridor object HUB_CORE_BYPASS
+PASS  Door object D01
+PASS  Door object D02
+PASS  Door object D03
+PASS  Door object D04
+PASS  Door object D05
+PASS  Door object D06
+PASS  Door object D07
+PASS  Polish root exists
+PASS  RoomVolumes hierarchy exists
+PASS  CoverPoints hierarchy exists
+PASS  Nav_Walkability hierarchy exists
+Active point lights: 12; active shadow-casting lights: 0
+If Unity warns about shadow atlas: reduce shadow-casting light count/resolution, not the navigation geometry.
+MANUAL: Walk ENTRY > HUB > ACOUSTIC > SECURITY > MAINT > CORE > return via bypass.
+MANUAL: Test physical doors, decoy, barricades and all four agents together.
+MANUAL: Re-bake/check NavMesh after any collision geometry change.
+MANUAL: Capture real Unity Profiler FPS, batches/draw calls and memory.
+MANUAL: Ensure teammates' models and animations use shared palette and matching scale.
+Summary: 32 structural checks passed; 0 need checking.
