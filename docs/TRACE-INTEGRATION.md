@@ -21,4 +21,4 @@ Owner: Team Lead. Branch: `feature/team-lead-trace`.
 
 ## Model pipeline
 
-Blender is unavailable on this machine. The original BASTION and TRACE blockouts, UVs, rigs, exports and Unity prefabs remain to be created and verified in Blender/Unity. Use the Notion character sheet and keep original `.blend` files in Git LFS once made.
+Blender 5.2 is available. Original blockouts and newer detailed rigged prototypes for BASTION, ECHO, RIFT and TRACE now exist on this Team Lead branch; see `docs/MODEL-BLOCKOUTS.md` and `docs/ANIMATION-HANDOFF.md`. The detailed FBXs re-imported in Blender with bones and weights, and a test pose moved geometry. UV quality, Unity import, prefabs, animation and gameplay remain unverified. Keep the editable `.blend` sources in Git LFS when publishing these changes.

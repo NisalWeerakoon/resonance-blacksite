@@ -1,9 +1,9 @@
-"""Build original BLACKSITE BASTION and TRACE hard-surface blockouts in Blender.
+"""Build four original BLACKSITE hard-surface character blockouts in Blender.
 
 Run from the repository root:
   blender --background --python tools/blender/build_character_blockouts.py
 
-Requires Blender 4.x or later. Generated .blend and .fbx files are intentionally
+Requires Blender 5.2 or later. Generated .blend and .fbx files are intentionally
 separate from this source script and must be inspected in Blender and Unity.
 """
 
@@ -35,6 +35,8 @@ STEEL = material("BS_Brushed_Steel", (0.30, 0.36, 0.40), 0.8)
 RUBBER = material("BS_Black_Rubber", (0.035, 0.045, 0.05), 0.0, 0.8)
 RED = material("BS_Bastion_Red", (0.8, 0.05, 0.04), 0.25)
 GREEN = material("BS_Trace_Green", (0.03, 0.8, 0.35), 0.2)
+CYAN = material("BS_Echo_Cyan", (0.02, 0.65, 0.8), 0.2)
+BLUE = material("BS_Rift_Blue", (0.04, 0.18, 0.9), 0.2)
 
 
 def collection(name):
@@ -125,29 +127,84 @@ def make_trace():
     return col
 
 
-def export_collection(col, name):
+def make_echo():
+    col = collection("ECHO_Original_Blockout")
+    x = -1.0
+    cube(col, "ECHO_Narrow_Torso", (x, 0, 1.27), (0.43, 0.32, 0.65), ARMOR)
+    cube(col, "ECHO_Sensor_Backpack", (x, 0.25, 1.35), (0.32, 0.18, 0.50), STEEL)
+    cube(col, "ECHO_Faceted_Hood", (x, 0, 1.76), (0.38, 0.37, 0.37), STEEL, 0.08)
+    cube(col, "ECHO_Cyan_Visor", (x, -0.20, 1.76), (0.27, 0.025, 0.055), CYAN, 0.01)
+    for side, suffix in ((-1, "L"), (1, "R")):
+        sx = x + side * 0.29
+        cube(col, f"ECHO_Arm_{suffix}", (sx, 0, 1.17),
+             (0.16, 0.20, 0.65), RUBBER)
+        cube(col, f"ECHO_Leg_{suffix}", (x + side * 0.13, 0, 0.48),
+             (0.17, 0.25, 0.88), ARMOR)
+        dish = cylinder(col, f"ECHO_Acoustic_Dish_{suffix}",
+                        (x + side * 0.34, 0, 1.80), 0.30, 0.08, STEEL, 32)
+        dish.rotation_euler.y = math.pi / 2
+        ring = cylinder(col, f"ECHO_Dish_Cyan_Core_{suffix}",
+                        (x + side * 0.39, 0, 1.80), 0.22, 0.085, CYAN, 32)
+        ring.rotation_euler.y = math.pi / 2
+    return col
+
+
+def make_rift():
+    col = collection("RIFT_Original_Blockout")
+    x = 1.0
+    cube(col, "RIFT_Lean_Torso", (x, 0, 1.28), (0.48, 0.32, 0.62), ARMOR)
+    cube(col, "RIFT_Point_Helmet", (x, 0, 1.75), (0.39, 0.36, 0.37), STEEL, 0.08)
+    left_visor = cube(col, "RIFT_V_Visor_L", (x - 0.09, -0.20, 1.77),
+                      (0.18, 0.025, 0.045), BLUE, 0.01)
+    right_visor = cube(col, "RIFT_V_Visor_R", (x + 0.09, -0.20, 1.77),
+                       (0.18, 0.025, 0.045), BLUE, 0.01)
+    left_visor.rotation_euler.y = -0.35
+    right_visor.rotation_euler.y = 0.35
+    for side, suffix in ((-1, "L"), (1, "R")):
+        cube(col, f"RIFT_Arm_{suffix}", (x + side * 0.36, 0, 1.17),
+             (0.17, 0.22, 0.65), RUBBER)
+        cube(col, f"RIFT_Leg_{suffix}", (x + side * 0.14, 0, 0.48),
+             (0.19, 0.26, 0.87), ARMOR)
+    panel = cube(col, "RIFT_Asymmetric_Shoulder_Plate", (x + 0.37, 0.15, 1.38),
+                 (0.35, 0.15, 0.85), STEEL, 0.03)
+    panel.rotation_euler.y = -0.18
+    cube(col, "RIFT_Blue_Shoulder_Channel", (x + 0.47, 0.06, 1.52),
+         (0.05, 0.02, 0.37), BLUE, 0.01)
+    return col
+
+
+def export_collection(col, name, origin_x):
     bpy.ops.object.select_all(action="DESELECT")
     for obj in col.objects:
+        obj.location.x -= origin_x
         obj.select_set(True)
     if col.objects:
         bpy.context.view_layer.objects.active = col.objects[0]
     bpy.ops.export_scene.fbx(filepath=str(OUT / f"{name}.fbx"), use_selection=True,
                              apply_unit_scale=True, add_leaf_bones=False)
+    for obj in col.objects:
+        obj.location.x += origin_x
 
 
 def main():
     bpy.ops.object.select_all(action="SELECT")
     bpy.ops.object.delete(use_global=False)
     for col in list(bpy.data.collections):
-        if col.name.startswith(("BASTION_Original_", "TRACE_Original_")):
+        if col.name.startswith(("BASTION_Original_", "TRACE_Original_",
+                                "ECHO_Original_", "RIFT_Original_")):
             bpy.data.collections.remove(col)
     bpy.context.scene.unit_settings.system = "METRIC"
     bpy.context.scene.unit_settings.scale_length = 1.0
     bastion = make_bastion()
     trace = make_trace()
+    echo = make_echo()
+    rift = make_rift()
+    bpy.context.preferences.filepaths.save_version = 0
     bpy.ops.wm.save_as_mainfile(filepath=str(OUT / "BLACKSITE_Character_Blockouts.blend"))
-    export_collection(bastion, "BASTION_blockout")
-    export_collection(trace, "TRACE_blockout")
+    export_collection(bastion, "BASTION_blockout", -3.0)
+    export_collection(trace, "TRACE_blockout", 3.0)
+    export_collection(echo, "ECHO_blockout", -1.0)
+    export_collection(rift, "RIFT_blockout", 1.0)
     print(f"Saved original blockout sources and FBX exports in {OUT}")
 
 
