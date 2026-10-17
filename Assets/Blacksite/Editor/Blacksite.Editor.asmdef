@@ -1,7 +1,7 @@
 {
   "name": "Blacksite.Editor",
   "rootNamespace": "Blacksite.Editor",
-  "references": ["Blacksite.Gameplay"],
+  "references": ["Blacksite.Gameplay", "Unity.RenderPipelines.Universal.Runtime"],
   "includePlatforms": ["Editor"],
   "excludePlatforms": [],
   "allowUnsafeCode": false,

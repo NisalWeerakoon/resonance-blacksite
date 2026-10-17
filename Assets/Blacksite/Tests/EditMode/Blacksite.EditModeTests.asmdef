@@ -1,7 +1,7 @@
 {
   "name": "Blacksite.EditModeTests",
   "rootNamespace": "Blacksite.Tests",
-  "references": ["Blacksite.Shared"],
+  "references": ["Blacksite.Shared", "Blacksite.Agents"],
   "optionalUnityReferences": ["TestAssemblies"],
   "includePlatforms": ["Editor"],
   "excludePlatforms": [],
