@@ -73,3 +73,14 @@ Open the repository in the pinned editor, allow package resolution, run **BLACKS
 - Still pending: visual review inside Unity, animation, TRACE movement hookup,
   four-agent integrated gameplay, target build and profiling.
 
+## 2026-10-18 TRACE sandbox checkpoint
+
+- Unity 6000.6.5f1 compiled the new `TraceSightSensor` and generated
+  `TraceDecisionSandbox.unity` with a player collider, four graph nodes, four
+  bidirectional links, three candidate intercepts and a TRACE prefab.
+- The sight sensor uses range and physics occlusion before submitting an
+  observation. The scene has **not** yet been Play Mode tested; the motor and
+  animation remain the Agent Controller's deliverables.
+- Unity's saved-reference audit passed for the TRACE brain, graph, sensor,
+  player target and three candidates. EditMode tests remained 4/4 passed.
+

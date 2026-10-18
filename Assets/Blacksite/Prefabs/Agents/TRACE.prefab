@@ -10,6 +10,8 @@ GameObject:
   m_Component:
   - component: {fileID: 1118671509958277416}
   - component: {fileID: 2870284938031676304}
+  - component: {fileID: 8170966010009745581}
+  - component: {fileID: 9671423751396696}
   m_Layer: 0
   m_Name: TRACE
   m_TagString: Untagged
@@ -53,7 +55,44 @@ SphereCollider:
   m_Enabled: 1
   serializedVersion: 3
   m_Radius: 0.55
-  m_Center: {x: 0, y: 0, z: 0}
+  m_Center: {x: 0, y: 1.55, z: 0}
+--- !u!114 &8170966010009745581
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 987189365444556293}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: dbe4bf1383a753642aa32e9264702b9f, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Blacksite.Agents::Blacksite.Agents.Trace.TraceBrain
+  graph: {fileID: 0}
+  interceptPoints: []
+  decisionIntervalSeconds: 0.5
+  forecastSeconds: 3
+  candidateRange: 25
+  weightedAStarWeight: 1.2
+--- !u!114 &9671423751396696
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 987189365444556293}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 2cd4518fafc307a44b4846c081110f33, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Blacksite.Agents::Blacksite.Agents.Trace.TraceSightSensor
+  playerTarget: {fileID: 0}
+  localEyeOffset: {x: 0, y: 1.55, z: -0.4}
+  sightRange: 18
+  observationInterval: 0.25
+  sightLayers:
+    serializedVersion: 2
+    m_Bits: 4294967295
 --- !u!1001 &3162985672196586810
 PrefabInstance:
   m_ObjectHideFlags: 0

@@ -9,13 +9,18 @@ Owner: Team Lead. Branch: `feature/team-lead-trace`.
 - `TraceWaypointGraph` stores waypoint and portal edges. `GraphAStar` now reports path cost and expanded-node count for ordinary or Weighted A*.
 - `TraceBrain` selects the strongest reachable candidate on a timed decision tick and emits `RouteChosen` for the Agent Controller's movement component. It does not read the hidden player's Transform or move its own Transform.
 - EditMode tests cover reversal, stale/outlier observations, and unreachable/late candidates.
+- `TraceSightSensor` supplies observations only when a raycast reaches the player
+  collider within range; occluded or absent targets produce no new sighting.
+- `TraceDecisionSandbox.unity` wires the TRACE prefab, player, four-node loop,
+  and three intercept candidates for isolated decision tests. It deliberately
+  does not move TRACE; the Agent Controller owns the shared movement layer.
 
 ## In Unity Editor
 
 1. Open the project in Unity 6000.6.5f1 after the team's version change. The user's Console showed zero red compile errors; recheck after each merge.
 2. Run **BLACKSITE → Initialize URP and prototype scenes**. The generated scenes and renderer assets still need a Unity validation commit.
-3. In the TRACE sandbox, add a `TraceWaypointGraph` with waypoint Transforms and bidirectional links; use D01–D07 portal IDs where appropriate. Add `TraceInterceptPoint` components to HUB and CORE chokepoints.
-4. Assign the graph and candidate points on `TraceBrain`. Feed observations only from real perception/shared alarms via `Observe`; connect door events to `SetPortalBlocked`.
+3. Open `Assets/Blacksite/Sandboxes/TeamLead/TraceDecisionSandbox.unity` to inspect the working sandbox graph. The real world scene still needs its own waypoints and D01–D07 portal IDs.
+4. The sandbox assigns the graph, candidates and a line-of-sight player sensor. In the real world, connect door events to `SetPortalBlocked` and use only real perception/shared alarm observations.
 5. Have the Agent Controller's motor subscribe to `RouteChosen` and follow the emitted waypoints. Until connected, TRACE makes route decisions but does not visibly move.
 6. Run EditMode tests. Demonstrate movement forward, reversal, stale/no sightings, blocked portal, and all candidates unreachable. Capture selected scores, path cost, and expanded nodes.
 
