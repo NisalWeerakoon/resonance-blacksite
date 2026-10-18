@@ -84,3 +84,19 @@ Open the repository in the pinned editor, allow package resolution, run **BLACKS
 - Unity's saved-reference audit passed for the TRACE brain, graph, sensor,
   player target and three candidates. EditMode tests remained 4/4 passed.
 
+## 2026-10-18 World Builder + Team Lead integration branch
+
+- Merged the World Builder's commit `c04786b` with the Team Lead branch on
+  `integration/team-lead-world-2026-10-18` without source conflicts.
+- Generated `WorldCharacterIntegration.unity` as a copy of the World Builder's
+  original `final.unity`; placed four linked character prefabs in their
+  matching rooms and disabled the static ECHO demo prototype in the copy only.
+- Unity 6000.6.5f1 loaded the merged scene with 994 objects, 104 colliders,
+  zero missing scripts and four complete linked character prefabs. Integrated
+  EditMode tests passed 4/4.
+- Static visual widths are ECHO 1.56 m, BASTION 2.95 m, RIFT 1.73 m and
+  TRACE 1.37 m. The seven frame openings are 3.35 m. These measurements do
+  not prove animated doorway clearance or Play Mode functionality.
+- Remaining: visible scene inspection, walking/animation, TRACE real-world
+  waypoint wiring, team AI integrations, gameplay and target build.
+
