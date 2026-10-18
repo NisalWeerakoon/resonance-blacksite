@@ -55,3 +55,21 @@ Open the repository in the pinned editor, allow package resolution, run **BLACKS
   a saved structural audit. A disposable Unity 6000.6 import is being run;
   **do not** claim world Play Mode is verified until it completes.
 
+## 2026-10-18 Unity 6000.6.5f1 import checks
+
+- The user's upgraded clone opened in Unity and the Console screenshot showed
+  two warnings, zero red compilation errors. The warnings concerned URP global
+  settings generation and the legacy Input Manager used by the prototype.
+- A separate batch-mode work copy imported the four detailed FBXs and generated
+  four prefabs with URP Lit material overrides and simplified colliders.
+- `BLACKSITE → Audit character prefabs` passed: BASTION 114 renderers/114
+  skinned meshes, ECHO 112/112, RIFT 102/102, TRACE 40/40; each has one simple
+  collider and valid URP materials. The review scene opened with seven roots.
+- Unity EditMode test run passed 4/4 tests (0 failed) in 6000.6.5f1. This
+  covers the current shared graph/TRACE unit tests, not Play Mode behavior.
+- The World Builder's committed `Assets/Scenes/final.unity` opened in a
+  disposable Unity 6000.6.5f1 copy: 553 objects, 100 colliders, zero missing
+  scripts. This is an Editor scene-load check, **not** Play Mode or a build.
+- Still pending: visual review inside Unity, animation, TRACE movement hookup,
+  four-agent integrated gameplay, target build and profiling.
+

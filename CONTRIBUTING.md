@@ -3,8 +3,8 @@
 ## One-time setup
 
 1. Install Git LFS, then run `git lfs install`.
-2. Clone the private repository and switch to `develop`.
-3. Open the root folder with Unity `6000.3.15f1`.
+2. Clone the repository and switch to your feature branch from `develop`.
+3. Open the root folder with Unity `6000.6.5f1` once the Editor-version update is merged. Until then, check `ProjectSettings/ProjectVersion.txt` on your branch.
 4. Let packages resolve, then confirm there are no Console compile errors before editing.
 
 ## Daily workflow

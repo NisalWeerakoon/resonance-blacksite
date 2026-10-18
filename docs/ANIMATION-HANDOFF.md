@@ -3,8 +3,8 @@
 Owner of source models: Team Lead. Use the **detailed** `.blend`/`.fbx` pairs
 in `Assets/Blacksite/Art/Characters/Detailed/`, not the older Blockouts folder.
 Each model has separate mesh parts and a named skeleton. The three humanoids
-share 18 bone names; TRACE has a six-bone mechanical rig. These assets still
-need Unity validation and animation, so they are not yet playable characters.
+share 18 bone names; TRACE has a six-bone mechanical rig. These assets now have
+Unity prefabs, but still need animation and movement before they are playable.
 
 ## What is ready
 
@@ -17,6 +17,11 @@ need Unity validation and animation, so they are not yet playable characters.
   bone pose moved attached geometry in all four files.
 - `*_detailed_preview.png` files are quick appearance checks. They are not
   Unity screenshots or evidence of finished materials/animation.
+- Unity 6000.6.5f1 imported all detailed FBXs. The four prefabs in
+  `Assets/Blacksite/Prefabs/Agents/` have URP Lit materials and simple
+  colliders. `Assets/Blacksite/Sandboxes/TeamLead/CharacterReview.unity`
+  places all four for inspection. **BLACKSITE → Audit character prefabs**
+  repeats the import checks.
 
 ## Animation teammate's work
 
@@ -37,14 +42,12 @@ need Unity validation and animation, so they are not yet playable characters.
 ## Known limitations
 
 - Primitive-generated UV layers exist but have **not** been carefully
-  unwrapped or visually checked for final textures. Materials are Blender node
-  colours, not validated Unity URP materials.
-- Armatures exist, but no animation clips, collision prefabs, LODs or hitboxes
-  are included. The models still require Unity import tests and visual cleanup.
-- No Unity Editor compilation, FBX Unity import, gameplay, or animation has
-  been verified. The project is pinned to Unity 6000.3.15f1. Its current local
-  installation is incomplete (missing reference assemblies), so repair it
-  before relying on Console or animation results.
+  unwrapped or visually checked for final textures. The Unity URP materials
+  are simple colour/metallic overrides, not final texture work.
+- Armatures and simple collision prefabs exist, but no animation clips, LODs,
+  detailed hitboxes or gameplay hookups are included. Visual cleanup remains.
+- Unity batch import and prefab audit passed in 6000.6.5f1. Play Mode,
+  movement, animation and a target build remain unverified.
 
 The Agent Controller should commit their own movement/animation implementation
 and test evidence on `feature/controller-rift`. The Team Lead retains ownership

@@ -1,12 +1,12 @@
 # RESONANCE // BLACKSITE
 
-A four-person Unity 6.3 LTS URP project combining a tactical sci-fi FPS with four independently implemented autonomous agents.
+A four-person Unity 6 URP project combining a tactical sci-fi FPS with four independently implemented autonomous agents.
 
 ## Required tooling
 
-- Unity `6000.3.15f1` with the Universal 3D template/workload
+- Unity `6000.6.5f1` on this Team Lead branch (the earlier `6000.3.15f1` installation was incomplete)
 - Git 2.40+ and Git LFS 3+
-- Blender (current team-agreed version)
+- Blender 5.2 if editing the original `.blend` model sources; not required to use the FBX prefabs in Unity
 
 ## First clone
 
@@ -18,7 +18,7 @@ git switch develop
 ```
 
 Open the repository root in Unity Hub. Do not commit `Library`, `Temp`, `Logs`, generated IDE files, or local settings.
-After packages resolve, run **BLACKSITE → Initialize URP and prototype scenes**. This creates the URP assets, the integration greybox, and four member sandbox scenes. Commit those generated files and their `.meta` files to `develop` after verifying the Unity Console.
+After packages resolve, run **BLACKSITE → Initialize URP and prototype scenes** for the starter greybox. The Team Lead branch also includes **BLACKSITE → Build character prefabs and review scene** and **BLACKSITE → Audit character prefabs**. The review scene is `Assets/Blacksite/Sandboxes/TeamLead/CharacterReview.unity`.
 
 ## Branch model
 
@@ -38,5 +38,5 @@ See [CONTRIBUTING.md](CONTRIBUTING.md), [docs/ARCHITECTURE.md](docs/ARCHITECTURE
 - **October 19–20:** stability, profiling, evidence capture, video, and viva preparation.
 - **October 21, 2026:** Graphics submission.
 
-Compilation status: **not yet verified in Unity Editor**. The current machine does not have Unity installed; see `docs/VALIDATION.md`. The player prototype uses the classic Input Manager; set Active Input Handling to **Both** or **Input Manager (Old)** if Unity prompts for it.
+Unity 6000.6.5f1 batch-mode model import and 4/4 EditMode tests passed on October 18; the user's Editor Console showed two warnings and zero red errors. Play Mode, animation and an integrated build are not yet verified; see `docs/VALIDATION.md`. The player prototype uses the classic Input Manager; set Active Input Handling to **Both** or **Input Manager (Old)** if Unity prompts for it.
 

@@ -12,7 +12,7 @@ Owner: Team Lead. Branch: `feature/team-lead-trace`.
 
 ## In Unity Editor
 
-1. Open the project in Unity 6000.3.15f1 and resolve packages. Fix any compile errors before treating this as working.
+1. Open the project in Unity 6000.6.5f1 after the team's version change. The user's Console showed zero red compile errors; recheck after each merge.
 2. Run **BLACKSITE → Initialize URP and prototype scenes**. The generated scenes and renderer assets still need a Unity validation commit.
 3. In the TRACE sandbox, add a `TraceWaypointGraph` with waypoint Transforms and bidirectional links; use D01–D07 portal IDs where appropriate. Add `TraceInterceptPoint` components to HUB and CORE chokepoints.
 4. Assign the graph and candidate points on `TraceBrain`. Feed observations only from real perception/shared alarms via `Observe`; connect door events to `SetPortalBlocked`.
@@ -21,4 +21,4 @@ Owner: Team Lead. Branch: `feature/team-lead-trace`.
 
 ## Model pipeline
 
-Blender 5.2 is available. Original blockouts and newer detailed rigged prototypes for BASTION, ECHO, RIFT and TRACE now exist on this Team Lead branch; see `docs/MODEL-BLOCKOUTS.md` and `docs/ANIMATION-HANDOFF.md`. The detailed FBXs re-imported in Blender with bones and weights, and a test pose moved geometry. UV quality, Unity import, prefabs, animation and gameplay remain unverified. Keep the editable `.blend` sources in Git LFS when publishing these changes.
+Blender 5.2 is available. Original blockouts and newer detailed rigged prototypes for BASTION, ECHO, RIFT and TRACE exist on this Team Lead branch; see `docs/MODEL-BLOCKOUTS.md` and `docs/ANIMATION-HANDOFF.md`. The detailed FBXs re-imported in Blender with bones and weights, and a test pose moved geometry. Unity 6000.6.5f1 imported the FBXs and prefab audit passed. UV quality, animation, Play Mode and gameplay remain unverified. Keep the editable `.blend` sources in Git LFS.
