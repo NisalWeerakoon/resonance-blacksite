@@ -68,12 +68,7 @@ MonoBehaviour:
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: a5ccfef563a94e4e9d6b08c48f254c17, type: 3}
   m_Name:
-  m_EditorClassIdentifier: Blacksite.Agents::Blacksite.Agents.Rift.RiftBlobShadow
-  width: 1.2
-  depth: 0.72
-  opacity: 0.72
-  groundOffset: 0.06
-  textureResolution: 64
+  m_EditorClassIdentifier: Blacksite.Agents::Blacksite.Agents.Rift.RiftCharacterShadow
 --- !u!1001 &8945773406285120061
 PrefabInstance:
   m_ObjectHideFlags: 0
