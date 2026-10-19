@@ -2140,6 +2140,37 @@ MeshFilter:
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 110447233}
   m_Mesh: {fileID: 10202, guid: 0000000000000000e000000000000000, type: 0}
+--- !u!1 &115686135
+GameObject:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  serializedVersion: 6
+  m_Component:
+  - component: {fileID: 115686136}
+  m_Layer: 0
+  m_Name: WP_Hall
+  m_TagString: Untagged
+  m_Icon: {fileID: 0}
+  m_NavMeshLayer: 0
+  m_StaticEditorFlags: 0
+  m_IsActive: 1
+--- !u!4 &115686136
+Transform:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 115686135}
+  serializedVersion: 2
+  m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
+  m_LocalPosition: {x: -2, y: 0, z: 0}
+  m_LocalScale: {x: 1, y: 1, z: 1}
+  m_ConstrainProportionsScale: 0
+  m_Children: []
+  m_Father: {fileID: 1208598224}
+  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
 --- !u!1 &118748091
 GameObject:
   m_ObjectHideFlags: 0
@@ -9886,6 +9917,37 @@ MeshRenderer:
   m_SortingOrder: 0
   m_MaskInteraction: 0
   m_AdditionalVertexStreams: {fileID: 0}
+--- !u!1 &447281650
+GameObject:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  serializedVersion: 6
+  m_Component:
+  - component: {fileID: 447281651}
+  m_Layer: 0
+  m_Name: WP_Maintenance
+  m_TagString: Untagged
+  m_Icon: {fileID: 0}
+  m_NavMeshLayer: 0
+  m_StaticEditorFlags: 0
+  m_IsActive: 1
+--- !u!4 &447281651
+Transform:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 447281650}
+  serializedVersion: 2
+  m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
+  m_LocalPosition: {x: 8, y: 0, z: 0}
+  m_LocalScale: {x: 1, y: 1, z: 1}
+  m_ConstrainProportionsScale: 0
+  m_Children: []
+  m_Father: {fileID: 1208598224}
+  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
 --- !u!1 &448572421
 GameObject:
   m_ObjectHideFlags: 0
@@ -23463,6 +23525,37 @@ MeshFilter:
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 1049463670}
   m_Mesh: {fileID: 10202, guid: 0000000000000000e000000000000000, type: 0}
+--- !u!1 &1051252565
+GameObject:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  serializedVersion: 6
+  m_Component:
+  - component: {fileID: 1051252566}
+  m_Layer: 0
+  m_Name: WP_Hub
+  m_TagString: Untagged
+  m_Icon: {fileID: 0}
+  m_NavMeshLayer: 0
+  m_StaticEditorFlags: 0
+  m_IsActive: 1
+--- !u!4 &1051252566
+Transform:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1051252565}
+  serializedVersion: 2
+  m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
+  m_LocalPosition: {x: -12, y: 0, z: 0}
+  m_LocalScale: {x: 1, y: 1, z: 1}
+  m_ConstrainProportionsScale: 0
+  m_Children: []
+  m_Father: {fileID: 1208598224}
+  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
 --- !u!1 &1051445970
 GameObject:
   m_ObjectHideFlags: 0
@@ -26923,6 +27016,71 @@ MeshFilter:
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 1206317379}
   m_Mesh: {fileID: 10206, guid: 0000000000000000e000000000000000, type: 0}
+--- !u!1 &1208598222
+GameObject:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  serializedVersion: 6
+  m_Component:
+  - component: {fileID: 1208598224}
+  - component: {fileID: 1208598223}
+  m_Layer: 0
+  m_Name: AgentWaypointGraph
+  m_TagString: Untagged
+  m_Icon: {fileID: 0}
+  m_NavMeshLayer: 0
+  m_StaticEditorFlags: 0
+  m_IsActive: 1
+--- !u!114 &1208598223
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1208598222}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 5289ae90bc201a64fa1db7d446bc4c31, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Blacksite.Agents::Blacksite.Agents.Trace.TraceWaypointGraph
+  nodes:
+  - id: HUB
+    point: {fileID: 1051252566}
+  - id: HALL
+    point: {fileID: 115686136}
+  - id: MAINT
+    point: {fileID: 447281651}
+  links:
+  - from: HUB
+    to: HALL
+    cost: 0
+    portalId: 
+    bidirectional: 1
+  - from: HALL
+    to: MAINT
+    cost: 0
+    portalId: 
+    bidirectional: 1
+--- !u!4 &1208598224
+Transform:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1208598222}
+  serializedVersion: 2
+  m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
+  m_LocalPosition: {x: 0, y: 0, z: 0}
+  m_LocalScale: {x: 1, y: 1, z: 1}
+  m_ConstrainProportionsScale: 0
+  m_Children:
+  - {fileID: 1051252566}
+  - {fileID: 115686136}
+  - {fileID: 447281651}
+  m_Father: {fileID: 0}
+  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
 --- !u!1 &1213593352
 GameObject:
   m_ObjectHideFlags: 0
@@ -35501,7 +35659,16 @@ PrefabInstance:
     m_RemovedComponents: []
     m_RemovedGameObjects: []
     m_AddedGameObjects: []
-    m_AddedComponents: []
+    m_AddedComponents:
+    - targetCorrespondingSourceObject: {fileID: 61372677505458331, guid: 5860dc454aebfee4aaa11c33bb0408dc, type: 3}
+      insertIndex: -1
+      addedObject: {fileID: 1961373536}
+    - targetCorrespondingSourceObject: {fileID: 61372677505458331, guid: 5860dc454aebfee4aaa11c33bb0408dc, type: 3}
+      insertIndex: -1
+      addedObject: {fileID: 1961373535}
+    - targetCorrespondingSourceObject: {fileID: 61372677505458331, guid: 5860dc454aebfee4aaa11c33bb0408dc, type: 3}
+      insertIndex: -1
+      addedObject: {fileID: 1961373534}
   m_SourcePrefab: {fileID: 100100000, guid: 5860dc454aebfee4aaa11c33bb0408dc, type: 3}
 --- !u!4 &1575650619 stripped
 Transform:
@@ -43180,6 +43347,68 @@ MeshFilter:
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 1958247834}
   m_Mesh: {fileID: 10202, guid: 0000000000000000e000000000000000, type: 0}
+--- !u!1 &1961373532 stripped
+GameObject:
+  m_CorrespondingSourceObject: {fileID: 61372677505458331, guid: 5860dc454aebfee4aaa11c33bb0408dc, type: 3}
+  m_PrefabInstance: {fileID: 1575650618}
+  m_PrefabAsset: {fileID: 0}
+--- !u!114 &1961373534
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1961373532}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: b86035c759ff473a8e671bdee4bcede2, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Blacksite.Agents::Blacksite.Agents.Movement.AgentSightSensor
+  brainComponent: {fileID: 1961373536}
+  playerTarget: {fileID: 1440506340}
+  localEyeOffset: {x: 0, y: 1.55, z: 0}
+  sightRange: 18
+  observationInterval: 0.25
+  sightLayers:
+    serializedVersion: 2
+    m_Bits: 4294967295
+--- !u!114 &1961373535
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1961373532}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 046b24e794a68b140ae887335e197b2d, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Blacksite.Agents::Blacksite.Agents.Rift.RiftBrain
+  motor: {fileID: 1961373536}
+  decisionInterval: 0.4
+  arrivalRadius: 0.8
+  flankPoint: {fileID: 0}
+  hasFlankRoute: 1
+--- !u!114 &1961373536
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1961373532}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: a9e3b69bd4b64788b1ea56dec30ea9c0, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Blacksite.Agents::Blacksite.Agents.Movement.WaypointAgentMotor
+  graphComponent: {fileID: 1208598223}
+  animator: {fileID: 0}
+  characterController: {fileID: 0}
+  moveSpeed: 2.5
+  turnSpeed: 360
+  arrivalDistance: 0.3
+  repathInterval: 0.5
+  faceMovementDirection: 1
 --- !u!1 &1962323037
 GameObject:
   m_ObjectHideFlags: 0
@@ -47262,3 +47491,4 @@ SceneRoots:
   m_Roots:
   - {fileID: 30137500}
   - {fileID: 1816314403}
+  - {fileID: 1208598224}
