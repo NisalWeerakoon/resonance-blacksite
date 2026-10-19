@@ -11,6 +11,7 @@ GameObject:
   - component: {fileID: 1792270734018469285}
   - component: {fileID: 5342482745337879143}
   - component: {fileID: 192800001}
+  - component: {fileID: 192800002}
   m_Layer: 0
   m_Name: RIFT
   m_TagString: Untagged
@@ -69,6 +70,22 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: a5ccfef563a94e4e9d6b08c48f254c17, type: 3}
   m_Name:
   m_EditorClassIdentifier: Blacksite.Agents::Blacksite.Agents.Rift.RiftCharacterShadow
+--- !u!114 &192800002
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 61372677505458331}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 3ad3d594a1c94ee4a4d0e2e569d70497, type: 3}
+  m_Name:
+  m_EditorClassIdentifier: Blacksite.Agents::Blacksite.Agents.Rift.RiftProceduralAnimation
+  walkCyclesPerSecond: 1.8
+  legSwingDegrees: 24
+  armSwingDegrees: 13
+  blendSpeed: 5
 --- !u!1001 &8945773406285120061
 PrefabInstance:
   m_ObjectHideFlags: 0
