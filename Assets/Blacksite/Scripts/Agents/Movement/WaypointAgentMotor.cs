@@ -106,10 +106,33 @@ namespace Blacksite.Agents.Movement
         {
             if (capsuleCollider == null) return desiredDirection;
             float probeDistance = Mathf.Max(obstacleProbeDistance, stepDistance);
-            if (!TryGetBlockingHit(desiredDirection, probeDistance, out _))
+            if (!TryGetBlockingHit(desiredDirection, probeDistance, out RaycastHit obstacleHit))
             {
                 avoidanceDirection = Vector3.zero;
                 return desiredDirection;
+            }
+
+            // Follow the obstacle surface toward the waypoint. A fixed angled turn
+            // can keep pushing the agent diagonally into the same wall.
+            Vector3 wallTangent = Vector3.ProjectOnPlane(desiredDirection, obstacleHit.normal);
+            wallTangent.y = 0f;
+            if (wallTangent.sqrMagnitude <= 0.000001f)
+            {
+                // A head-on hit has no projected forward component. Pick a stable
+                // direction along the wall so the agent can reach its edge.
+                wallTangent = Vector3.Cross(Vector3.up, obstacleHit.normal);
+                if (Vector3.Dot(wallTangent, transform.right) < 0f) wallTangent = -wallTangent;
+            }
+            if (wallTangent.sqrMagnitude > 0.000001f)
+            {
+                wallTangent.Normalize();
+                if (Vector3.Dot(wallTangent, desiredDirection) < 0f) wallTangent = -wallTangent;
+                float tangentProbe = Mathf.Min(probeDistance, moveSpeed * Time.deltaTime + collisionSkin);
+                if (!TryGetBlockingHit(wallTangent, tangentProbe, out _))
+                {
+                    avoidanceDirection = wallTangent;
+                    return avoidanceDirection;
+                }
             }
 
             if (avoidanceDirection.sqrMagnitude > 0.000001f &&

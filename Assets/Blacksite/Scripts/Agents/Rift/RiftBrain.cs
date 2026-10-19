@@ -34,7 +34,7 @@ namespace Blacksite.Agents.Rift
         [SerializeField] private WaypointAgentMotor motor;
         [SerializeField, Min(0.1f)] private float decisionInterval = 0.4f;
         [SerializeField, Min(0.1f)] private float arrivalRadius = 0.8f;
-        [SerializeField, Min(0.1f)] private float sightMemoryDuration = 3f;
+        [SerializeField, Min(0.1f)] private float sightFreshnessDuration = 0.75f;
         [SerializeField, Min(0f)] private float predictionHorizon = 1.5f;
         [SerializeField, Min(0.1f)] private float maxPredictedTargetSpeed = 6f;
         [SerializeField] private Transform flankPoint;
@@ -108,8 +108,10 @@ namespace Blacksite.Agents.Rift
                 return;
             }
 
-            bool targetVisible = LatestObservation.HasValue &&
-                                 Time.timeAsDouble - LatestObservation.Value.Time < sightMemoryDuration;
+            double observationAge = LatestObservation.HasValue
+                ? Time.timeAsDouble - LatestObservation.Value.Time
+                : double.PositiveInfinity;
+            bool targetVisible = observationAge < sightFreshnessDuration;
             Vector3 estimatedTargetPosition = GetEstimatedTargetPosition();
             if (!targetVisible && isSearching)
             {
@@ -226,7 +228,7 @@ namespace Blacksite.Agents.Rift
             CurrentAction = action.Name;
             CurrentPlan = plan.ConvertAll(item => item.Name).ToArray();
             PlanChanged?.Invoke(CurrentAction);
-            if (!hasIssuedGoal || Vector3.Distance(lastIssuedGoal, action.Goal) > 0.25f ||
+            if (!hasIssuedGoal || Vector3.Distance(lastIssuedGoal, action.Goal) > 0.05f ||
                 motor.IsBlocked || !motor.HasDestination)
             {
                 motor.SetDestination(action.Goal);

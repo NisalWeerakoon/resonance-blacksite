@@ -43407,7 +43407,7 @@ MonoBehaviour:
   brainComponent: {fileID: 1961373536}
   playerTarget: {fileID: 1440506340}
   localEyeOffset: {x: 0, y: 1.55, z: 0}
-  sightRange: 18
+  sightRange: 40
   observationInterval: 0.25
   sightLayers:
     serializedVersion: 2
@@ -43427,7 +43427,7 @@ MonoBehaviour:
   motor: {fileID: 1961373536}
   decisionInterval: 0.4
   arrivalRadius: 0.8
-  sightMemoryDuration: 3
+  sightFreshnessDuration: 0.75
   predictionHorizon: 1.5
   maxPredictedTargetSpeed: 6
   flankPoint: {fileID: 0}
