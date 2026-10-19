@@ -11,6 +11,9 @@ namespace Blacksite.Agents.Movement
         [SerializeField] private MonoBehaviour graphComponent;
         [SerializeField] private Animator animator;
         [SerializeField] private CharacterController characterController;
+        [SerializeField] private CapsuleCollider capsuleCollider;
+        [SerializeField] private LayerMask obstacleLayers = ~0;
+        [SerializeField, Min(0f)] private float collisionSkin = 0.03f;
         [SerializeField, Min(0.1f)] private float moveSpeed = 2.5f;
         [SerializeField, Min(0.1f)] private float turnSpeed = 360f;
         [SerializeField, Min(0.05f)] private float arrivalDistance = 0.3f;
@@ -20,6 +23,7 @@ namespace Blacksite.Agents.Movement
         private readonly HashSet<string> blockedPortals = new HashSet<string>();
         private readonly List<string> nodePath = new List<string>();
         private readonly List<Vector3> route = new List<Vector3>();
+        private readonly RaycastHit[] collisionHits = new RaycastHit[16];
         private Vector3 destination;
         private bool hasDestination;
         private int waypointIndex;
@@ -45,6 +49,7 @@ namespace Blacksite.Agents.Movement
             }
             if (animator == null) animator = GetComponentInChildren<Animator>();
             if (characterController == null) characterController = GetComponent<CharacterController>();
+            if (capsuleCollider == null) capsuleCollider = GetComponent<CapsuleCollider>();
             previousForward = transform.forward;
         }
 
@@ -86,10 +91,67 @@ namespace Blacksite.Agents.Movement
                 else verticalVelocity -= 9.81f * Time.deltaTime;
                 characterController.Move((planarVelocity + Vector3.up * verticalVelocity) * Time.deltaTime);
             }
-            else transform.position += planarVelocity * Time.deltaTime;
+            else MoveWithCollision(planarVelocity * Time.deltaTime);
 
             IsMoving = planarVelocity.sqrMagnitude > 0.01f;
             UpdateAnimator(planarVelocity);
+        }
+
+        private void MoveWithCollision(Vector3 displacement)
+        {
+            if (displacement.sqrMagnitude <= 0.000001f) return;
+            if (capsuleCollider == null)
+            {
+                transform.position += displacement;
+                return;
+            }
+
+            Vector3 remaining = displacement;
+            for (int slide = 0; slide < 2 && remaining.sqrMagnitude > 0.000001f; slide++)
+            {
+                float distance = remaining.magnitude;
+                Vector3 direction = remaining / distance;
+                if (!TryGetBlockingHit(direction, distance + collisionSkin, out RaycastHit hit))
+                {
+                    transform.position += remaining;
+                    return;
+                }
+
+                float safeDistance = Mathf.Max(0f, hit.distance - collisionSkin);
+                Vector3 safeMove = direction * safeDistance;
+                transform.position += safeMove;
+                remaining -= safeMove;
+                remaining = Vector3.ProjectOnPlane(remaining, hit.normal);
+            }
+        }
+
+        private bool TryGetBlockingHit(Vector3 direction, float distance, out RaycastHit nearestHit)
+        {
+            Bounds bounds = capsuleCollider.bounds;
+            float radius = Mathf.Min(Mathf.Max(bounds.extents.x, bounds.extents.z), bounds.extents.y);
+            float segment = Mathf.Max(0f, bounds.extents.y - radius);
+            Vector3 center = bounds.center;
+            Vector3 bottom = center - Vector3.up * segment;
+            Vector3 top = center + Vector3.up * segment;
+            int hitCount = Physics.CapsuleCastNonAlloc(bottom, top, radius, direction, collisionHits,
+                distance, obstacleLayers, QueryTriggerInteraction.Ignore);
+
+            nearestHit = default;
+            float nearestDistance = float.PositiveInfinity;
+            bool found = false;
+            for (int i = 0; i < hitCount; i++)
+            {
+                Collider hitCollider = collisionHits[i].collider;
+                if (hitCollider == null || hitCollider.transform == transform ||
+                    hitCollider.transform.IsChildOf(transform)) continue;
+                if (collisionHits[i].distance >= nearestDistance) continue;
+
+                nearestHit = collisionHits[i];
+                nearestDistance = collisionHits[i].distance;
+                found = true;
+            }
+
+            return found;
         }
 
         public bool SetDestination(Vector3 worldPosition)
