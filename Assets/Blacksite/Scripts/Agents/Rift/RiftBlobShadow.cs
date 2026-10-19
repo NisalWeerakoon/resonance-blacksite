@@ -91,7 +91,9 @@ namespace Blacksite.Agents.Rift
                 float ny = (y + 0.5f) / size * 2f - 1f;
                 float radius = Mathf.Sqrt(nx * nx + ny * ny);
                 float edge = 1f - Mathf.SmoothStep(0.18f, 1f, radius);
-                texture.SetPixel(x, y, new Color(0f, 0f, 0f, edge * opacity));
+                // Keep the texel white so the material tint remains visible;
+                // black RGB here would multiply the teal tint back to black.
+                texture.SetPixel(x, y, new Color(1f, 1f, 1f, edge * opacity));
             }
 
             texture.Apply(false, true);
