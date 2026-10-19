@@ -5,7 +5,7 @@ using UnityEngine;
 
 namespace Blacksite.Agents.Trace
 {
-    public sealed class TraceWaypointGraph : MonoBehaviour, IWaypointGraph
+    public sealed class TraceWaypointGraph : MonoBehaviour, IWaypointGraph, IWaypointNodeProvider
     {
         [Serializable] private sealed class Node
         {
