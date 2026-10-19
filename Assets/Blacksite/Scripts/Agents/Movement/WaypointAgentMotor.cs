@@ -100,6 +100,40 @@ namespace Blacksite.Agents.Movement
             return RebuildRoute();
         }
 
+        /// <summary>Follows a route already selected by an agent brain, such as TRACE's intercept path.</summary>
+        public bool SetRoute(IReadOnlyList<Vector3> worldWaypoints)
+        {
+            route.Clear();
+            waypointIndex = 0;
+            IsBlocked = false;
+            if (worldWaypoints == null || worldWaypoints.Count == 0)
+            {
+                ClearDestination();
+                return false;
+            }
+
+            for (int i = 0; i < worldWaypoints.Count; i++)
+            {
+                Vector3 waypoint = worldWaypoints[i];
+                if (route.Count == 0 || Vector3.Distance(route[route.Count - 1], waypoint) > arrivalDistance)
+                    route.Add(waypoint);
+            }
+
+            if (route.Count == 0)
+            {
+                ClearDestination();
+                return false;
+            }
+
+            destination = route[route.Count - 1];
+            hasDestination = true;
+            while (waypointIndex < route.Count &&
+                   Vector3.Distance(transform.position, route[waypointIndex]) <= arrivalDistance)
+                waypointIndex++;
+            if (waypointIndex >= route.Count) FinishRoute();
+            return true;
+        }
+
         public void ClearDestination()
         {
             hasDestination = false;
