@@ -7,6 +7,8 @@ namespace Blacksite.Agents.Movement
     /// <summary>Shared graph path follower. It owns motion and presentation, never agent decisions.</summary>
     public sealed class WaypointAgentMotor : MonoBehaviour
     {
+        private static readonly float[] DetourAngles = { 35f, -35f, 60f, -60f, 90f, -90f, 125f, -125f, 180f };
+
         [Header("Route")]
         [SerializeField] private MonoBehaviour graphComponent;
         [SerializeField] private Animator animator;
@@ -14,6 +16,7 @@ namespace Blacksite.Agents.Movement
         [SerializeField] private CapsuleCollider capsuleCollider;
         [SerializeField] private LayerMask obstacleLayers = ~0;
         [SerializeField, Min(0f)] private float collisionSkin = 0.03f;
+        [SerializeField, Min(0.1f)] private float obstacleProbeDistance = 0.8f;
         [SerializeField, Min(0.1f)] private float moveSpeed = 2.5f;
         [SerializeField, Min(0.1f)] private float turnSpeed = 360f;
         [SerializeField, Min(0.05f)] private float arrivalDistance = 0.3f;
@@ -30,6 +33,7 @@ namespace Blacksite.Agents.Movement
         private float repathTimer;
         private float verticalVelocity;
         private Vector3 previousForward;
+        private Vector3 avoidanceDirection;
         private IWaypointGraph graph;
         private IWaypointNodeProvider nodeProvider;
 
@@ -74,7 +78,8 @@ namespace Blacksite.Agents.Movement
                 }
                 else
                 {
-                    Vector3 direction = offset.normalized;
+                    Vector3 direction = SelectClearDirection(offset.normalized,
+                        moveSpeed * Time.deltaTime + collisionSkin);
                     planarVelocity = direction * moveSpeed;
                     if (faceMovementDirection)
                     {
@@ -95,6 +100,34 @@ namespace Blacksite.Agents.Movement
 
             IsMoving = planarVelocity.sqrMagnitude > 0.01f;
             UpdateAnimator(planarVelocity);
+        }
+
+        private Vector3 SelectClearDirection(Vector3 desiredDirection, float stepDistance)
+        {
+            if (capsuleCollider == null) return desiredDirection;
+            float probeDistance = Mathf.Max(obstacleProbeDistance, stepDistance);
+            if (!TryGetBlockingHit(desiredDirection, probeDistance, out _))
+            {
+                avoidanceDirection = Vector3.zero;
+                return desiredDirection;
+            }
+
+            if (avoidanceDirection.sqrMagnitude > 0.000001f &&
+                !TryGetBlockingHit(avoidanceDirection, stepDistance, out _))
+                return avoidanceDirection;
+
+            // Try shallow detours first, then move around the obstacle's side.
+            for (int i = 0; i < DetourAngles.Length; i++)
+            {
+                Vector3 candidate = Quaternion.AngleAxis(DetourAngles[i], Vector3.up) * desiredDirection;
+                if (!TryGetBlockingHit(candidate, Mathf.Min(probeDistance, moveSpeed * Time.deltaTime + collisionSkin), out _))
+                {
+                    avoidanceDirection = candidate.normalized;
+                    return avoidanceDirection;
+                }
+            }
+
+            return desiredDirection;
         }
 
         private void MoveWithCollision(Vector3 displacement)
@@ -122,7 +155,40 @@ namespace Blacksite.Agents.Movement
                 transform.position += safeMove;
                 remaining -= safeMove;
                 remaining = Vector3.ProjectOnPlane(remaining, hit.normal);
+                if (remaining.sqrMagnitude <= 0.000001f)
+                {
+                    Vector3 sideStep = FindClearSideStep(hit.normal, distance - safeDistance);
+                    if (sideStep.sqrMagnitude > 0.000001f)
+                        transform.position += sideStep;
+                    return;
+                }
             }
+        }
+
+        private Vector3 FindClearSideStep(Vector3 obstacleNormal, float distance)
+        {
+            Vector3 tangent = Vector3.Cross(Vector3.up, obstacleNormal).normalized;
+            if (tangent.sqrMagnitude <= 0.000001f) return Vector3.zero;
+
+            Vector3 toDestination = destination - transform.position;
+            toDestination.y = 0f;
+            Vector3 alongWall = Vector3.ProjectOnPlane(toDestination, obstacleNormal).normalized;
+            Vector3 first = tangent;
+            Vector3 second = -tangent;
+            if (alongWall.sqrMagnitude > 0.000001f)
+            {
+                if (Vector3.Dot(alongWall, second) > Vector3.Dot(alongWall, first))
+                    (first, second) = (second, first);
+            }
+            else if (Vector3.Dot(first, transform.right) < Vector3.Dot(second, transform.right))
+            {
+                (first, second) = (second, first);
+            }
+
+            float stepDistance = Mathf.Min(distance, moveSpeed * Time.deltaTime);
+            if (!TryGetBlockingHit(first, stepDistance + collisionSkin, out _)) return first * stepDistance;
+            if (!TryGetBlockingHit(second, stepDistance + collisionSkin, out _)) return second * stepDistance;
+            return Vector3.zero;
         }
 
         private bool TryGetBlockingHit(Vector3 direction, float distance, out RaycastHit nearestHit)

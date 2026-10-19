@@ -34,6 +34,9 @@ namespace Blacksite.Agents.Rift
         [SerializeField] private WaypointAgentMotor motor;
         [SerializeField, Min(0.1f)] private float decisionInterval = 0.4f;
         [SerializeField, Min(0.1f)] private float arrivalRadius = 0.8f;
+        [SerializeField, Min(0.1f)] private float sightMemoryDuration = 3f;
+        [SerializeField, Min(0f)] private float predictionHorizon = 1.5f;
+        [SerializeField, Min(0.1f)] private float maxPredictedTargetSpeed = 6f;
         [SerializeField] private Transform flankPoint;
         [SerializeField] private bool hasFlankRoute = true;
         [SerializeField] private Transform[] patrolPoints = Array.Empty<Transform>();
@@ -42,7 +45,9 @@ namespace Blacksite.Agents.Rift
         private readonly List<GoapAction> actionSet = new List<GoapAction>();
         private int patrolIndex;
         private Vector3 lastKnownPosition;
+        private Vector3 lastKnownVelocity;
         private bool hasIntel;
+        private bool isSearching;
         private float decisionTimer;
         private Vector3 lastIssuedGoal;
         private bool hasIssuedGoal;
@@ -60,9 +65,26 @@ namespace Blacksite.Agents.Rift
 
         public override void Observe(WorldObservation observation)
         {
+            if (LatestObservation.HasValue)
+            {
+                WorldObservation previous = LatestObservation.Value;
+                double elapsed = observation.Time - previous.Time;
+                if (elapsed > 0.01 && elapsed <= 1.0)
+                {
+                    Vector3 measuredVelocity = observation.Position - previous.Position;
+                    measuredVelocity.y = 0f;
+                    measuredVelocity /= (float)elapsed;
+                    measuredVelocity = Vector3.ClampMagnitude(measuredVelocity, maxPredictedTargetSpeed);
+                    lastKnownVelocity = Vector3.Lerp(lastKnownVelocity, measuredVelocity, 0.5f);
+                }
+                else lastKnownVelocity = Vector3.zero;
+            }
+            else lastKnownVelocity = Vector3.zero;
+
             base.Observe(observation);
             lastKnownPosition = observation.Position;
             hasIntel = true;
+            isSearching = false;
             decisionTimer = decisionInterval;
         }
 
@@ -86,23 +108,31 @@ namespace Blacksite.Agents.Rift
                 return;
             }
 
+            bool targetVisible = LatestObservation.HasValue &&
+                                 Time.timeAsDouble - LatestObservation.Value.Time < sightMemoryDuration;
+            Vector3 estimatedTargetPosition = GetEstimatedTargetPosition();
+            if (!targetVisible && isSearching)
+            {
+                TickPatrol();
+                return;
+            }
+
             Fact state = Fact.HasIntel;
             if (hasFlankRoute && flankPoint != null) state |= Fact.HasFlankRoute;
             if (motor.HasArrived)
             {
-                if (Vector3.Distance(transform.position, lastKnownPosition) <= arrivalRadius) state |= Fact.AtTarget;
+                if (Vector3.Distance(transform.position, estimatedTargetPosition) <= arrivalRadius) state |= Fact.AtTarget;
                 if (flankPoint != null && Vector3.Distance(transform.position, flankPoint.position) <= arrivalRadius)
                     state |= Fact.AtFlank;
             }
-            if (LatestObservation.HasValue && Time.timeAsDouble - LatestObservation.Value.Time < 1.25)
-                state |= Fact.TargetVisible;
+            if (targetVisible) state |= Fact.TargetVisible;
             if (motor.IsBlocked) state |= Fact.RouteInvalidated;
 
             actionSet.Clear();
             actionSet.Add(new GoapAction { Name = "Pursue", Requires = Fact.HasIntel | Fact.TargetVisible,
-                Adds = Fact.AtTarget, Removes = Fact.AtFlank, Cost = 1f, Goal = lastKnownPosition });
+                Adds = Fact.AtTarget, Removes = Fact.AtFlank, Cost = 1f, Goal = estimatedTargetPosition });
             actionSet.Add(new GoapAction { Name = "InvestigateLastKnown", Requires = Fact.HasIntel,
-                Adds = Fact.AtTarget, Removes = Fact.TargetVisible, Cost = 1.2f, Goal = lastKnownPosition });
+                Adds = Fact.AtTarget, Removes = Fact.TargetVisible, Cost = 1.2f, Goal = estimatedTargetPosition });
             if ((state & Fact.HasFlankRoute) != 0)
                 actionSet.Add(new GoapAction { Name = "Flank", Requires = Fact.HasIntel | Fact.HasFlankRoute,
                     Adds = Fact.AtFlank, Removes = Fact.AtTarget, Cost = 0.8f, Goal = flankPoint.position });
@@ -118,7 +148,25 @@ namespace Blacksite.Agents.Rift
                 ClearPlan();
                 return;
             }
+            if (plan.Count == 0)
+            {
+                ClearPlan();
+                if (!targetVisible && (state & Fact.AtTarget) != 0)
+                {
+                    isSearching = true;
+                    TickPatrol();
+                }
+                return;
+            }
             ExecuteNextAction();
+        }
+
+        private Vector3 GetEstimatedTargetPosition()
+        {
+            if (!LatestObservation.HasValue || predictionHorizon <= 0f) return lastKnownPosition;
+            float age = Mathf.Clamp((float)(Time.timeAsDouble - LatestObservation.Value.Time), 0f,
+                predictionHorizon);
+            return lastKnownPosition + lastKnownVelocity * age;
         }
 
         private void TickPatrol()

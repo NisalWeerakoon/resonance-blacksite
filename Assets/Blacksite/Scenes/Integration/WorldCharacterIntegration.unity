@@ -43427,6 +43427,9 @@ MonoBehaviour:
   motor: {fileID: 1961373536}
   decisionInterval: 0.4
   arrivalRadius: 0.8
+  sightMemoryDuration: 3
+  predictionHorizon: 1.5
+  maxPredictedTargetSpeed: 6
   flankPoint: {fileID: 0}
   hasFlankRoute: 1
   patrolPoints:
@@ -43448,6 +43451,11 @@ MonoBehaviour:
   graphComponent: {fileID: 1208598223}
   animator: {fileID: 0}
   characterController: {fileID: 0}
+  capsuleCollider: {fileID: 0}
+  obstacleLayers:
+    serializedVersion: 2
+    m_Bits: 4294967295
+  collisionSkin: 0.03
   moveSpeed: 2.5
   turnSpeed: 360
   arrivalDistance: 0.3
