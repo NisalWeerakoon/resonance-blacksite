@@ -42,13 +42,27 @@ namespace Blacksite.Agents.Movement
             nextObservationTime = Time.time + observationInterval;
 
             Vector3 origin = transform.TransformPoint(localEyeOffset);
-            Vector3 target = playerTarget.position + Vector3.up;
+            Collider targetCollider = playerTarget.GetComponent<Collider>();
+            Vector3 target = targetCollider != null
+                ? targetCollider.bounds.center
+                : playerTarget.position + Vector3.up;
             Vector3 direction = target - origin;
             float distance = direction.magnitude;
             if (distance > sightRange || distance < 0.01f) return;
-            if (!Physics.Raycast(origin, direction / distance, out RaycastHit hit, distance + 0.1f,
-                    sightLayers, QueryTriggerInteraction.Ignore)) return;
-            if (hit.transform != playerTarget && !hit.transform.IsChildOf(playerTarget)) return;
+            RaycastHit[] hits = Physics.RaycastAll(origin, direction / distance, distance + 0.1f,
+                sightLayers, QueryTriggerInteraction.Ignore);
+            float nearestDistance = float.PositiveInfinity;
+            bool playerVisible = false;
+            foreach (RaycastHit hit in hits)
+            {
+                Transform hitTransform = hit.collider.transform;
+                if (hitTransform == transform || hitTransform.IsChildOf(transform)) continue;
+                if (hit.distance >= nearestDistance) continue;
+
+                nearestDistance = hit.distance;
+                playerVisible = hitTransform == playerTarget || hitTransform.IsChildOf(playerTarget);
+            }
+            if (!playerVisible) return;
 
             float confidence = Mathf.Clamp01(1f - distance / (sightRange * 1.5f));
             brain.Observe(new WorldObservation(playerTarget.position, confidence, Time.timeAsDouble));

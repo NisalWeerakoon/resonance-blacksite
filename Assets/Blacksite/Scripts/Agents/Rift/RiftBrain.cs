@@ -36,9 +36,11 @@ namespace Blacksite.Agents.Rift
         [SerializeField, Min(0.1f)] private float arrivalRadius = 0.8f;
         [SerializeField] private Transform flankPoint;
         [SerializeField] private bool hasFlankRoute = true;
+        [SerializeField] private Transform[] patrolPoints = Array.Empty<Transform>();
 
         private readonly List<GoapAction> plan = new List<GoapAction>();
         private readonly List<GoapAction> actionSet = new List<GoapAction>();
+        private int patrolIndex;
         private Vector3 lastKnownPosition;
         private bool hasIntel;
         private float decisionTimer;
@@ -77,7 +79,12 @@ namespace Blacksite.Agents.Rift
             decisionTimer += deltaTime;
             if (decisionTimer < decisionInterval) return;
             decisionTimer = 0f;
-            if (!hasIntel || motor == null) return;
+            if (motor == null) return;
+            if (!hasIntel)
+            {
+                TickPatrol();
+                return;
+            }
 
             Fact state = Fact.HasIntel;
             if (hasFlankRoute && flankPoint != null) state |= Fact.HasFlankRoute;
@@ -112,6 +119,23 @@ namespace Blacksite.Agents.Rift
                 return;
             }
             ExecuteNextAction();
+        }
+
+        private void TickPatrol()
+        {
+            if (patrolPoints == null || patrolPoints.Length == 0) return;
+            if (motor.HasDestination && !motor.HasArrived && !motor.IsBlocked) return;
+
+            for (int offset = 0; offset < patrolPoints.Length; offset++)
+            {
+                int index = (patrolIndex + offset) % patrolPoints.Length;
+                Transform point = patrolPoints[index];
+                if (point == null) continue;
+
+                patrolIndex = (index + 1) % patrolPoints.Length;
+                motor.SetDestination(point.position);
+                return;
+            }
         }
 
         private bool TryPlan(Fact initial, Fact goal)

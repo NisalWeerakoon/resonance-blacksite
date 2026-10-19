@@ -1718,6 +1718,7 @@ MonoBehaviour:
   m_Script: {fileID: 620309307}
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::Blacksite7.WorldBuilder.CoverPointData
+  coverId: 
 --- !u!1 &99162359
 GameObject:
   m_ObjectHideFlags: 0
@@ -5236,6 +5237,15 @@ MonoBehaviour:
   m_Script: {fileID: 1256534662}
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::Blacksite7.WorldBuilder.DoorPortalData
+  doorId: 
+  roomA: 
+  roomB: 
+  isOpen: 1
+  isLocked: 0
+  blocksNavigation: 0
+  openAcousticCost: 1
+  closedAcousticCost: 4
+  sealedAcousticCost: 6
 --- !u!1 &285064013
 GameObject:
   m_ObjectHideFlags: 0
@@ -5894,6 +5904,7 @@ MonoBehaviour:
   m_Script: {fileID: 620309307}
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::Blacksite7.WorldBuilder.CoverPointData
+  coverId: 
 --- !u!1 &308157430
 GameObject:
   m_ObjectHideFlags: 0
@@ -10860,6 +10871,7 @@ MonoBehaviour:
   m_Script: {fileID: 620309307}
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::Blacksite7.WorldBuilder.CoverPointData
+  coverId: 
 --- !u!1 &500996363
 GameObject:
   m_ObjectHideFlags: 0
@@ -10998,6 +11010,15 @@ MonoBehaviour:
   m_Script: {fileID: 1256534662}
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::Blacksite7.WorldBuilder.DoorPortalData
+  doorId: 
+  roomA: 
+  roomB: 
+  isOpen: 1
+  isLocked: 0
+  blocksNavigation: 0
+  openAcousticCost: 1
+  closedAcousticCost: 4
+  sealedAcousticCost: 6
 --- !u!1 &505082107
 GameObject:
   m_ObjectHideFlags: 0
@@ -12889,6 +12910,15 @@ MonoBehaviour:
   m_Script: {fileID: 1256534662}
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::Blacksite7.WorldBuilder.DoorPortalData
+  doorId: 
+  roomA: 
+  roomB: 
+  isOpen: 1
+  isLocked: 0
+  blocksNavigation: 0
+  openAcousticCost: 1
+  closedAcousticCost: 4
+  sealedAcousticCost: 6
 --- !u!1 &579317576
 GameObject:
   m_ObjectHideFlags: 0
@@ -13660,6 +13690,15 @@ MonoBehaviour:
   m_Script: {fileID: 1256534662}
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::Blacksite7.WorldBuilder.DoorPortalData
+  doorId: 
+  roomA: 
+  roomB: 
+  isOpen: 1
+  isLocked: 0
+  blocksNavigation: 0
+  openAcousticCost: 1
+  closedAcousticCost: 4
+  sealedAcousticCost: 6
 --- !u!1 &619593118
 GameObject:
   m_ObjectHideFlags: 0
@@ -17110,6 +17149,7 @@ MonoBehaviour:
   m_Script: {fileID: 766100495}
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::Blacksite7.WorldBuilder.InterceptPointData
+  pointId: 
 --- !u!1 &743159555
 GameObject:
   m_ObjectHideFlags: 0
@@ -43389,6 +43429,10 @@ MonoBehaviour:
   arrivalRadius: 0.8
   flankPoint: {fileID: 0}
   hasFlankRoute: 1
+  patrolPoints:
+  - {fileID: 115686136}
+  - {fileID: 1051252566}
+  - {fileID: 447281651}
 --- !u!114 &1961373536
 MonoBehaviour:
   m_ObjectHideFlags: 0
