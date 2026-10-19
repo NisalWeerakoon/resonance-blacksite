@@ -43461,6 +43461,9 @@ MonoBehaviour:
   arrivalDistance: 0.3
   repathInterval: 0.5
   faceMovementDirection: 1
+  proceduralVisualMotion: 1
+  movementBobHeight: 0.025
+  movementLeanAngle: 4
 --- !u!1 &1962323037
 GameObject:
   m_ObjectHideFlags: 0

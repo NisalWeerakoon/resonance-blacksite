@@ -22,6 +22,9 @@ namespace Blacksite.Agents.Movement
         [SerializeField, Min(0.05f)] private float arrivalDistance = 0.3f;
         [SerializeField, Min(0.1f)] private float repathInterval = 0.5f;
         [SerializeField] private bool faceMovementDirection = true;
+        [SerializeField] private bool proceduralVisualMotion;
+        [SerializeField, Min(0f)] private float movementBobHeight = 0.025f;
+        [SerializeField, Min(0f)] private float movementLeanAngle = 4f;
 
         private readonly HashSet<string> blockedPortals = new HashSet<string>();
         private readonly List<string> nodePath = new List<string>();
@@ -34,6 +37,10 @@ namespace Blacksite.Agents.Movement
         private float verticalVelocity;
         private Vector3 previousForward;
         private Vector3 avoidanceDirection;
+        private Transform visualRoot;
+        private Vector3 visualRootStartPosition;
+        private Quaternion visualRootStartRotation;
+        private float visualMotionPhase;
         private IWaypointGraph graph;
         private IWaypointNodeProvider nodeProvider;
 
@@ -54,6 +61,12 @@ namespace Blacksite.Agents.Movement
             if (animator == null) animator = GetComponentInChildren<Animator>();
             if (characterController == null) characterController = GetComponent<CharacterController>();
             if (capsuleCollider == null) capsuleCollider = GetComponent<CapsuleCollider>();
+            if (visualRoot == null && transform.childCount > 0) visualRoot = transform.GetChild(0);
+            if (visualRoot != null)
+            {
+                visualRootStartPosition = visualRoot.localPosition;
+                visualRootStartRotation = visualRoot.localRotation;
+            }
             previousForward = transform.forward;
         }
 
@@ -99,7 +112,29 @@ namespace Blacksite.Agents.Movement
             else MoveWithCollision(planarVelocity * Time.deltaTime);
 
             IsMoving = planarVelocity.sqrMagnitude > 0.01f;
+            UpdateProceduralVisual(planarVelocity);
             UpdateAnimator(planarVelocity);
+        }
+
+        private void UpdateProceduralVisual(Vector3 velocity)
+        {
+            if (!proceduralVisualMotion || animator != null || visualRoot == null) return;
+
+            float frequency = IsMoving ? 8f : 1.6f;
+            visualMotionPhase += Time.deltaTime * frequency;
+            float bob = IsMoving
+                ? Mathf.Abs(Mathf.Sin(visualMotionPhase)) * movementBobHeight
+                : Mathf.Sin(visualMotionPhase) * movementBobHeight * 0.12f;
+            Vector3 localVelocity = transform.InverseTransformDirection(velocity);
+            float forward = Mathf.Clamp(localVelocity.z / Mathf.Max(moveSpeed, 0.1f), -1f, 1f);
+            float side = Mathf.Clamp(localVelocity.x / Mathf.Max(moveSpeed, 0.1f), -1f, 1f);
+            float idleSway = IsMoving ? 0f : Mathf.Sin(visualMotionPhase * 0.5f) * 0.8f;
+
+            visualRoot.localPosition = visualRootStartPosition + Vector3.up * bob;
+            visualRoot.localRotation = visualRootStartRotation * Quaternion.Euler(
+                -forward * movementLeanAngle,
+                idleSway,
+                -side * movementLeanAngle);
         }
 
         private Vector3 SelectClearDirection(Vector3 desiredDirection, float stepDistance)
