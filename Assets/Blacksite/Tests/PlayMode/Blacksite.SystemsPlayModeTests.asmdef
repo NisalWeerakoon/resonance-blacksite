@@ -1,0 +1,15 @@
+{
+  "name": "Blacksite.SystemsPlayModeTests",
+  "rootNamespace": "Blacksite.Tests",
+  "references": ["Blacksite.Shared", "Blacksite.Gameplay", "Blacksite.Agents"],
+  "optionalUnityReferences": ["TestAssemblies"],
+  "includePlatforms": [],
+  "excludePlatforms": [],
+  "allowUnsafeCode": false,
+  "overrideReferences": true,
+  "precompiledReferences": ["nunit.framework.dll"],
+  "autoReferenced": false,
+  "defineConstraints": ["UNITY_INCLUDE_TESTS"],
+  "versionDefines": [],
+  "noEngineReferences": false
+}

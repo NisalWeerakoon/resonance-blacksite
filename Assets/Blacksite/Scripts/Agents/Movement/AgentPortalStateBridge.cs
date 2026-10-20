@@ -1,3 +1,4 @@
+using Blacksite.Agents.Bastion;
 using Blacksite.Agents.Rift;
 using Blacksite.Agents.Trace;
 using Blacksite.Shared;
@@ -53,6 +54,7 @@ namespace Blacksite.Agents.Movement
             bool blocked = !portal.IsTraversable;
             if (agentBrain is RiftBrain rift) rift.SetPortalBlocked(portal.PortalId, blocked);
             else if (agentBrain is TraceBrain trace) trace.SetPortalBlocked(portal.PortalId, blocked);
+            else if (agentBrain is BastionBrain bastion) bastion.SetPortalBlocked(portal.PortalId, blocked);
         }
     }
 }
