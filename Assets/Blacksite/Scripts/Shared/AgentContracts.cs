@@ -28,7 +28,7 @@ namespace Blacksite.Shared
 
     public interface IPathPlanner
     {
-        bool TryPlan(Vector3 start, Vector3 goal, IReadOnlySet<string> blockedPortals,
+        bool TryPlan(Vector3 start, Vector3 goal, ISet<string> blockedPortals,
             List<Vector3> pathBuffer);
     }
 

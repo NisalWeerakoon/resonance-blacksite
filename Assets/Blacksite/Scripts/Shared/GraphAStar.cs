@@ -27,7 +27,7 @@ namespace Blacksite.Shared
     {
         // Use an admissible heuristic for an optimal route. Weight > 1 enables Weighted A*.
         public static bool TryFind(IWaypointGraph graph, string start, string goal,
-            IReadOnlySet<string> blockedPortals, List<string> result, float heuristicWeight = 1f)
+            ISet<string> blockedPortals, List<string> result, float heuristicWeight = 1f)
         {
             if (graph == null) throw new ArgumentNullException(nameof(graph));
             if (result == null) throw new ArgumentNullException(nameof(result));
