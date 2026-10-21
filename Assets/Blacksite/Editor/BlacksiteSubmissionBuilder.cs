@@ -103,16 +103,30 @@ namespace Blacksite.Editor
                 .ConfigureSandbox(camera, decoyPrefab.GetComponent<ThrowableDecoy>());
             player.gameObject.AddComponent<PlayerFootstepEmitter>();
             player.gameObject.AddComponent<PlayerPulseWeapon>();
+            player.gameObject.AddComponent<PlayerVitals>();
+            AddCarbineViewmodel(camera.transform);
 
             var extraction = new GameObject("Extraction_Point_ENTRY");
             extraction.transform.SetParent(runtime.transform);
             extraction.transform.position = new Vector3(-29f, 1f, 0f);
+            var relays = new[] {
+                AddRelay(runtime.transform, "ACOUSTIC", new Vector3(-9f, 1f, 18f)),
+                AddRelay(runtime.transform, "SECURITY", new Vector3(11f, 1f, 18f)),
+                AddRelay(runtime.transform, "MAINT", new Vector3(11f, 1f, 0f))
+            };
             var mission = runtime.AddComponent<BlacksiteMission>();
             var agents = new[] { echoRoot, bastionRoot, riftRoot, traceRoot };
             var health = new SubmissionAgentHealth[agents.Length];
             for (int i = 0; i < agents.Length; i++)
+            {
                 health[i] = agents[i].gameObject.AddComponent<SubmissionAgentHealth>();
-            mission.Configure(player, core.gameObject, extraction.transform, health);
+                AddAgentIdentifier(agents[i], new[] { "ECHO", "BASTION", "RIFT", "TRACE" }[i],
+                    new[] { Color.cyan, new Color(1f, .45f, .1f), Color.red, Color.magenta }[i]);
+            }
+            mission.Configure(player, core.gameObject, extraction.transform, health, relays);
+            runtime.AddComponent<SubmissionCombatDirector>().Configure(
+                player.GetComponent<PlayerVitals>(), health, bastion);
+            runtime.AddComponent<BlacksiteGameFlow>().Configure(mission);
 
             int staleComponents = 0;
             foreach (Transform item in UnityEngine.Object.FindObjectsByType<Transform>())
@@ -172,6 +186,83 @@ namespace Blacksite.Editor
             foreach (Transform transform in UnityEngine.Object.FindObjectsByType<Transform>())
                 if (transform.name == name) return transform;
             return null;
+        }
+
+        private static void AddCarbineViewmodel(Transform camera)
+        {
+            var root = new GameObject("Pulse_Carbine_Viewmodel");
+            root.transform.SetParent(camera, false);
+            var shell = AssetDatabase.LoadAssetAtPath<Material>(
+                "Assets/Blacksite/Prefabs/Systems/Systems_Grey.mat");
+            var glow = AssetDatabase.LoadAssetAtPath<Material>(
+                "Assets/_BLACKSITE/WorldBuilder/DecorGenerated/Materials/M_EmissiveCyan.mat");
+            ViewPart("Receiver", PrimitiveType.Cube, root.transform,
+                new Vector3(.37f, -.31f, .72f), new Vector3(.22f, .19f, .54f), shell);
+            ViewPart("Barrel", PrimitiveType.Cylinder, root.transform,
+                new Vector3(.37f, -.28f, 1.05f), new Vector3(.075f, .29f, .075f), shell)
+                .transform.localRotation = Quaternion.Euler(90f, 0f, 0f);
+            ViewPart("EnergyCell", PrimitiveType.Cube, root.transform,
+                new Vector3(.37f, -.19f, .71f), new Vector3(.13f, .035f, .30f), glow);
+            ViewPart("Muzzle", PrimitiveType.Sphere, root.transform,
+                new Vector3(.37f, -.28f, 1.33f), new Vector3(.11f, .11f, .11f), glow);
+            ViewPart("Grip", PrimitiveType.Cube, root.transform,
+                new Vector3(.37f, -.48f, .53f), new Vector3(.12f, .27f, .18f), shell);
+        }
+
+        private static GameObject ViewPart(string name, PrimitiveType type, Transform parent,
+            Vector3 position, Vector3 scale, Material material)
+        {
+            var part = GameObject.CreatePrimitive(type);
+            part.name = name;
+            part.transform.SetParent(parent, false);
+            part.transform.localPosition = position;
+            part.transform.localScale = scale;
+            if (material != null) part.GetComponent<Renderer>().sharedMaterial = material;
+            var collider = part.GetComponent<Collider>();
+            if (collider != null) UnityEngine.Object.DestroyImmediate(collider);
+            return part;
+        }
+
+        private static void AddAgentIdentifier(Transform agent, string label, Color tint)
+        {
+            var marker = new GameObject(label + "_Identity");
+            marker.transform.SetParent(agent, false);
+            marker.transform.localPosition = new Vector3(0f, 2.7f, 0f);
+            var text = marker.AddComponent<TextMesh>();
+            text.text = label;
+            text.fontSize = 72;
+            text.characterSize = .014f;
+            text.anchor = TextAnchor.MiddleCenter;
+            text.alignment = TextAlignment.Center;
+            text.color = tint;
+            marker.AddComponent<AgentWorldLabel>();
+        }
+
+        private static SubmissionRelay AddRelay(Transform parent, string label, Vector3 position)
+        {
+            var root = new GameObject("Relay_" + label);
+            root.transform.SetParent(parent);
+            root.transform.position = position;
+            ViewPart("Console", PrimitiveType.Cube, root.transform,
+                new Vector3(0f, -.35f, 0f), new Vector3(.8f, .7f, .7f),
+                AssetDatabase.LoadAssetAtPath<Material>("Assets/Blacksite/Prefabs/Systems/Systems_Grey.mat"));
+            var indicator = ViewPart("Indicator", PrimitiveType.Cube, root.transform,
+                new Vector3(0f, .17f, 0f), new Vector3(.65f, .3f, .45f),
+                AssetDatabase.LoadAssetAtPath<Material>(
+                    "Assets/_BLACKSITE/WorldBuilder/DecorGenerated/Materials/M_EmissiveCyan.mat"));
+            var relay = root.AddComponent<SubmissionRelay>();
+            relay.Configure(label, indicator.GetComponent<Renderer>());
+            var sign = new GameObject("Relay_Sign");
+            sign.transform.SetParent(root.transform, false);
+            sign.transform.localPosition = new Vector3(0f, 1f, 0f);
+            var text = sign.AddComponent<TextMesh>();
+            text.text = "[E] " + label + " RELAY";
+            text.fontSize = 60;
+            text.characterSize = .012f;
+            text.anchor = TextAnchor.MiddleCenter;
+            text.color = Color.cyan;
+            sign.AddComponent<AgentWorldLabel>();
+            return relay;
         }
 
         private static WaypointAgentMotor EnsureMotor(Transform root, TraceWaypointGraph graph)

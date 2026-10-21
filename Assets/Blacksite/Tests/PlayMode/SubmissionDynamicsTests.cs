@@ -15,6 +15,9 @@ namespace Blacksite.Tests
 {
     public sealed class SubmissionDynamicsTests
     {
+        [TearDown]
+        public void ResetCapturedFrameRate() => Time.captureFramerate = 0;
+
         [UnityTest]
         public IEnumerator AgentsHaveSolidNavigationColliders()
         {
@@ -76,28 +79,59 @@ namespace Blacksite.Tests
         }
 
         [UnityTest]
-        public IEnumerator CaptureAndPulseDisableReachExpectedStates()
+        public IEnumerator DamageAndPulseDisableReachExpectedStates()
         {
             SceneManager.LoadScene("SubmissionPlayable");
             yield return null;
             var mission = Object.FindFirstObjectByType<BlacksiteMission>();
             var enemy = Object.FindFirstObjectByType<BastionBrain>().GetComponent<SubmissionAgentHealth>();
             var player = GameObject.Find("DemoPlayer_FPS");
+            var vitals = player.GetComponent<PlayerVitals>();
             Assert.IsNotNull(mission);
             Assert.IsNotNull(enemy);
             Assert.IsNotNull(player);
+            Assert.IsNotNull(vitals);
             enemy.TakeHit();
             enemy.TakeHit();
             Assert.IsTrue(enemy.gameObject.activeInHierarchy);
             enemy.TakeHit();
             Assert.IsFalse(enemy.gameObject.activeInHierarchy);
-            var rift = Object.FindFirstObjectByType<RiftBrain>();
+            vitals.TakeDamage(vitals.MaxHealth, "test");
+            yield return null;
+            Assert.IsTrue(mission.Lost, "Depleting health should end the run");
+            yield return null;
+            Assert.IsFalse(BlacksiteGameFlow.IsPlaying, "Defeat should show the end state");
+        }
+
+        [UnityTest]
+        public IEnumerator EachOfFourActiveAgentsCanDamageThePlayer()
+        {
+            Time.captureFramerate = 60;
+            SceneManager.LoadScene("SubmissionPlayable");
+            yield return null;
+            var player = GameObject.Find("DemoPlayer_FPS");
+            var vitals = player.GetComponent<PlayerVitals>();
+            var controller = player.GetComponent<CharacterController>();
+            var agents = new[] {
+                Object.FindFirstObjectByType<EchoBrain>().GetComponent<SubmissionAgentHealth>(),
+                Object.FindFirstObjectByType<BastionBrain>().GetComponent<SubmissionAgentHealth>(),
+                Object.FindFirstObjectByType<RiftBrain>().GetComponent<SubmissionAgentHealth>(),
+                Object.FindFirstObjectByType<TraceBrain>().GetComponent<SubmissionAgentHealth>()
+            };
             foreach (WaypointAgentMotor motor in Object.FindObjectsByType<WaypointAgentMotor>())
                 motor.enabled = false;
-            player.transform.position = rift.transform.position;
-            Physics.SyncTransforms();
-            yield return new WaitForSeconds(1.4f);
-            Assert.IsTrue(mission.Lost, "Sustained agent proximity should capture the player");
+            for (int i = 0; i < agents.Length; i++)
+            {
+                for (int j = 0; j < agents.Length; j++) agents[j].gameObject.SetActive(i == j);
+                controller.enabled = false;
+                player.transform.position = agents[i].transform.position + Vector3.right * 1.7f + Vector3.up;
+                controller.enabled = true;
+                Physics.SyncTransforms();
+                int before = vitals.Health;
+                for (int frame = 0; frame < 65; frame++) yield return null;
+                Assert.Less(vitals.Health, before, agents[i].name + " should damage the player");
+            }
+            Time.captureFramerate = 0;
         }
     }
 }

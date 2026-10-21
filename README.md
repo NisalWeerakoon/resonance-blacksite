@@ -38,24 +38,26 @@ See [CONTRIBUTING.md](CONTRIBUTING.md), [docs/ARCHITECTURE.md](docs/ARCHITECTURE
 - **October 19–20:** stability, profiling, evidence capture, video, and viva preparation.
 - **October 21, 2026:** Graphics submission.
 
-On October 18, Unity 6000.6.5f1 imported the models and passed 4/4 then-current
-EditMode tests. The player prototype uses the classic Input Manager; set Active
-Input Handling to **Both** or **Input Manager (Old)** if Unity prompts for it.
+The submission player uses Unity's new Input System. Leave Active Input Handling
+at the committed project setting, **Both**.
 
 ## Submission playable scene (October 21)
 
 Open `Assets/Blacksite/Scenes/Integration/SubmissionPlayable.unity` in Unity
-6000.6.5f1 and press Play. This is a copy of the World Builder integration scene;
-her original `Assets/Scenes/final.unity` remains untouched. Move with WASD and
-mouse, use left click for a pulse shot, E near the core to collect it or near
-systems to interact, G to throw a decoy, and return to ENTRY to extract. Press
-R after a win or capture to retry. ECHO, BASTION, RIFT and TRACE are included
-with their feature-branch logic and scene motors. The target scene is the only
-enabled Build Settings scene.
+6000.6.5f1 and press Play, or launch the Windows standalone build. This is a
+copy of the World Builder integration scene; her original `Assets/Scenes/final.unity`
+remains untouched. Press **Start Mission** or **Enter**. Activate the ACOUSTIC,
+SECURITY and MAINT relays with **E**, collect the core in CORE VAULT with **E**,
+and return to ENTRY to extract. The core stays locked until all three relays
+are active. Use WASD and mouse to move/aim, left click to fire the visible pulse
+carbine, **R** to reload, and **G** to throw a decoy. The HUD shows health, ammo,
+relay progress and the status of ECHO, BASTION, RIFT and TRACE. Each threat can
+damage the player; three pulse hits disable one. Zero health ends the run. The
+win/lose screen offers a retry, and **R** also restarts after either outcome.
 
-Automated Unity 6000.6.5f1 validation: 34/34 EditMode and 9/9 PlayMode tests
-passed on October 21, including a four-agent scene load, agent decisions and
-physical movement, route, combat/capture and mission pickup/extraction checks.
-These tests do not establish visual polish,
-animation quality or full human playthrough; see `docs/VALIDATION.md`.
+Automated Unity 6000.6.5f1 validation on October 21: **34/34 EditMode** and
+**15/15 PlayMode** tests, plus a Windows x64 build with zero errors. The rendered
+start and gameplay views were inspected. A complete human end-to-end playthrough
+and visual input through the automated computer-control tool were not verified;
+see `docs/VALIDATION.md`.
 

@@ -9,10 +9,11 @@ namespace Blacksite.Gameplay
         [SerializeField] private GameObject coreVisual;
         [SerializeField] private Transform extractionPoint;
         [SerializeField] private SubmissionAgentHealth[] enemies;
+        [SerializeField] private PlayerVitals vitals;
+        [SerializeField] private SubmissionRelay[] relays;
         [SerializeField, Min(.5f)] private float pickupRange = 2.2f;
         [SerializeField, Min(.5f)] private float extractionRange = 3f;
         [SerializeField, Min(.1f)] private float captureRange = 1.25f;
-        private float captureTime;
         private bool hasCore;
         private bool won;
         private bool lost;
@@ -20,21 +21,48 @@ namespace Blacksite.Gameplay
         public bool HasCore => hasCore;
         public bool Won => won;
         public bool Lost => lost;
+        public int RelaysActive
+        {
+            get
+            {
+                int count = 0;
+                if (relays != null)
+                    foreach (SubmissionRelay relay in relays)
+                        if (relay != null && relay.Activated) count++;
+                return count;
+            }
+        }
+        public int RelayCount => relays == null ? 0 : relays.Length;
 
         public void Configure(Transform playerTransform, GameObject core,
-            Transform extraction, SubmissionAgentHealth[] agents)
+            Transform extraction, SubmissionAgentHealth[] agents, SubmissionRelay[] requiredRelays = null)
         {
             player = playerTransform;
             coreVisual = core;
             extractionPoint = extraction;
             enemies = agents;
+            vitals = player != null ? player.GetComponent<PlayerVitals>() : null;
+            relays = requiredRelays;
         }
 
         private void Update()
         {
+            if (!BlacksiteGameFlow.IsPlaying && !won && !lost) return;
             if (BlacksiteInput.Pressed(KeyCode.R) && (won || lost))
                 SceneManager.LoadScene(SceneManager.GetActiveScene().buildIndex);
             if (won || lost || player == null) return;
+            if (vitals != null && vitals.IsDead)
+            {
+                lost = true;
+                UnlockCursor();
+                Debug.Log("BLACKSITE_MISSION operative down");
+                return;
+            }
+            if (BlacksiteInput.Pressed(KeyCode.E) && relays != null)
+                foreach (SubmissionRelay relay in relays)
+                    if (relay != null && !relay.Activated &&
+                        Vector3.Distance(player.position, relay.transform.position) <= 2.5f)
+                        relay.Activate();
 
             if (!hasCore && coreVisual != null &&
                 Vector3.Distance(player.position, coreVisual.transform.position) <= pickupRange &&
@@ -49,22 +77,11 @@ namespace Blacksite.Gameplay
                 return;
             }
 
-            bool threatened = false;
-            if (enemies != null)
-                foreach (SubmissionAgentHealth enemy in enemies)
-                    if (enemy != null && enemy.gameObject.activeInHierarchy &&
-                        Vector3.Distance(player.position, enemy.transform.position) < captureRange)
-                        threatened = true;
-            captureTime = threatened ? captureTime + Time.deltaTime : Mathf.Max(0f, captureTime - 2f * Time.deltaTime);
-            if (captureTime < 1.25f) return;
-            lost = true;
-            UnlockCursor();
-            Debug.Log("BLACKSITE_MISSION operative captured");
         }
 
         public bool TryCollectCore()
         {
-            if (hasCore || player == null || coreVisual == null ||
+            if (hasCore || RelaysActive < RelayCount || player == null || coreVisual == null ||
                 Vector3.Distance(player.position, coreVisual.transform.position) > pickupRange)
                 return false;
             hasCore = true;
@@ -81,15 +98,30 @@ namespace Blacksite.Gameplay
 
         private void OnGUI()
         {
-            GUI.Box(new Rect(12, 12, 570, 120), "RESONANCE // BLACKSITE — Recovery Operation");
+            if (!BlacksiteGameFlow.IsPlaying) return;
+            GUI.Box(new Rect(12, 12, 570, 148), "RESONANCE // BLACKSITE — Recovery Operation");
             string objective = won ? "EXTRACTION COMPLETE — press R to play again" :
-                lost ? "OPERATIVE CAPTURED — press R to retry" :
+                lost ? "OPERATIVE DOWN — press R to retry" :
                 hasCore ? "CORE SECURED — return to ENTRY for extraction" :
-                "FIND THE RESONANCE CORE in CORE VAULT; press E to collect";
+                RelaysActive < RelayCount ?
+                    $"ACTIVATE RELAYS ({RelaysActive}/{RelayCount}) in ACOUSTIC, SECURITY, MAINT — press E" :
+                    "FIND THE RESONANCE CORE in CORE VAULT; press E to collect";
             GUI.Label(new Rect(24, 40, 540, 25), objective);
-            GUI.Label(new Rect(24, 66, 540, 22), "WASD move • mouse look • left click pulse • E interact • G decoy • Esc unlock");
-            if (!won && !lost && captureTime > 0f)
-                GUI.Label(new Rect(24, 91, 540, 22), "WARNING — enemy contact! Move away or fire.");
+            GUI.Label(new Rect(24, 66, 540, 22), "WASD move • mouse aim • left click pulse • R reload • E interact • G decoy");
+            GUI.Label(new Rect(24, 91, 540, 22), "Four distinct threats: use decoys, cover and the carbine; evade or disable them.");
+            if (vitals != null)
+            {
+                GUI.color = vitals.Health < 30 ? Color.red : Color.green;
+                GUI.DrawTexture(new Rect(24, 124, 5.2f * vitals.Health, 14f), Texture2D.whiteTexture);
+                GUI.color = Color.white;
+                GUI.Label(new Rect(24, 123, 530, 20), $"OPERATIVE HEALTH {vitals.Health}/{vitals.MaxHealth}");
+                if (vitals.DamageFlash > 0f)
+                {
+                    GUI.color = new Color(1f, .1f, .1f, vitals.DamageFlash * .3f);
+                    GUI.DrawTexture(new Rect(0f, 0f, Screen.width, Screen.height), Texture2D.whiteTexture);
+                    GUI.color = Color.white;
+                }
+            }
         }
     }
 }

@@ -85,6 +85,7 @@ namespace Blacksite.Tests
             Assert.IsNotNull(mission);
             Assert.IsNotNull(core);
             var controller = player.GetComponent<CharacterController>();
+            foreach (SubmissionRelay relay in Object.FindObjectsByType<SubmissionRelay>()) relay.Activate();
             controller.enabled = false;
             player.transform.position = core.transform.position;
             controller.enabled = true;
@@ -143,6 +144,42 @@ namespace Blacksite.Tests
         }
 
         [UnityTest]
+        public IEnumerator ThreeRelaysRequireInteractionBeforeCoreUnlocks()
+        {
+            keyboard = InputSystem.AddDevice<Keyboard>();
+            SceneManager.LoadScene("SubmissionPlayable");
+            yield return null;
+            var mission = Object.FindFirstObjectByType<BlacksiteMission>();
+            var player = GameObject.Find("DemoPlayer_FPS");
+            var core = GameObject.Find("CorePickup_Visual_Only");
+            var controller = player.GetComponent<CharacterController>();
+            Assert.AreEqual(3, mission.RelayCount);
+            Assert.AreEqual(0, mission.RelaysActive);
+            controller.enabled = false;
+            player.transform.position = core.transform.position;
+            controller.enabled = true;
+            Physics.SyncTransforms();
+            Assert.IsFalse(mission.TryCollectCore(), "Core must remain locked before relays");
+            foreach (SubmissionRelay relay in Object.FindObjectsByType<SubmissionRelay>())
+            {
+                controller.enabled = false;
+                player.transform.position = relay.transform.position;
+                controller.enabled = true;
+                Physics.SyncTransforms();
+                InputSystem.QueueStateEvent(keyboard, new KeyboardState(Key.E));
+                yield return null;
+                InputSystem.QueueStateEvent(keyboard, new KeyboardState());
+                yield return null;
+            }
+            Assert.AreEqual(3, mission.RelaysActive, "E must activate all three room relays");
+            controller.enabled = false;
+            player.transform.position = core.transform.position;
+            controller.enabled = true;
+            Physics.SyncTransforms();
+            Assert.IsTrue(mission.TryCollectCore());
+        }
+
+        [UnityTest]
         public IEnumerator PlayerCanWalkFromEntryToCoreAndBack()
         {
             // Headless test runners may render only a few frames per wall-clock second.
@@ -158,6 +195,7 @@ namespace Blacksite.Tests
             Assert.IsNotNull(mission);
             foreach (SubmissionAgentHealth enemy in Object.FindObjectsByType<SubmissionAgentHealth>())
                 enemy.gameObject.SetActive(false);
+            foreach (SubmissionRelay relay in Object.FindObjectsByType<SubmissionRelay>()) relay.Activate();
 
             Vector3[] outward = {
                 new Vector3(-29f, 0f, 0f),

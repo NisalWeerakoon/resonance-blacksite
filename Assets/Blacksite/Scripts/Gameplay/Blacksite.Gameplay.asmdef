@@ -1,7 +1,7 @@
 {
   "name": "Blacksite.Gameplay",
   "rootNamespace": "Blacksite.Gameplay",
-  "references": ["Blacksite.Shared", "Unity.InputSystem"],
+  "references": ["Blacksite.Shared", "Blacksite.Agents", "Unity.InputSystem"],
   "includePlatforms": [],
   "excludePlatforms": [],
   "allowUnsafeCode": false,

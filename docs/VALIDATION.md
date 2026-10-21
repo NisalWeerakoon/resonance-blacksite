@@ -1,5 +1,26 @@
 # Validation record
 
+## 2026-10-21 gameplay repair
+
+- Replaced the walk-only mission with three E-activated room relays, a locked
+  core until those relays are active, core extraction, a start screen, and
+  win/lose screens.
+- Added a visible pulse carbine, 12-charge magazine, timed reload, hit marker,
+  health/damage feedback, player death, and an on-screen four-agent tracker.
+- Connected each of ECHO, BASTION, RIFT and TRACE to distinct damaging attacks;
+  their existing navigation/decision components remain in the saved scene.
+- The saved scene loads all four brains/motors and three relays. PlayMode tests
+  separately checked that **each agent damages the player**, relay E input,
+  core lock, pulse-hit disable, health-based loss, victory, retry, and a
+  physical player walk to the core and back.
+- Unity 6000.6.5f1: **15/15 PlayMode** and **34/34 EditMode** tests passed.
+  Windows x64 build succeeded with **0 errors**. The rendered title and live
+  gameplay views were visually inspected with the carbine and HUD present.
+- Limitation: the computer-control tool did not deliver clicks/Enter to the
+  full-screen Unity title reliably, so the rendered gameplay inspection used
+  the build's `-skipTitle` inspection flag. A complete human playthrough,
+  difficulty tuning, and animation quality are **not verified** by these checks.
+
 ## 2026-10-21 submission integration
 
 - Merged Agent Controller/RIFT, Systems/BASTION and World Builder/ECHO feature

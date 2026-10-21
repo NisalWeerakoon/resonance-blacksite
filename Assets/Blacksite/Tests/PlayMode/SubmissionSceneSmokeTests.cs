@@ -33,6 +33,9 @@ namespace Blacksite.Tests
             Assert.GreaterOrEqual(route.Count, 3);
             Assert.AreEqual(2, Object.FindObjectsByType<DoorPortal>().Length);
             Assert.AreEqual(1, Object.FindObjectsByType<MovableBarricade>().Length);
+            Assert.AreEqual(3, Object.FindObjectsByType<SubmissionRelay>().Length);
+            Assert.IsNotNull(GameObject.Find("Pulse_Carbine_Viewmodel"));
+            Assert.IsNotNull(GameObject.Find("DemoPlayer_FPS").GetComponent<PlayerVitals>());
             int missing = 0;
             foreach (Transform item in Object.FindObjectsByType<Transform>())
                 foreach (MonoBehaviour component in item.GetComponents<MonoBehaviour>())
@@ -51,6 +54,7 @@ namespace Blacksite.Tests
             var core = GameObject.Find("CorePickup_Visual_Only");
             Assert.IsNotNull(player);
             Assert.IsNotNull(core);
+            foreach (SubmissionRelay relay in Object.FindObjectsByType<SubmissionRelay>()) relay.Activate();
             player.transform.position = core.transform.position;
             Physics.SyncTransforms();
             Assert.IsTrue(mission.TryCollectCore());
@@ -60,6 +64,8 @@ namespace Blacksite.Tests
             yield return null;
             Assert.IsTrue(mission.Won);
             Assert.IsFalse(mission.Lost);
+            yield return null;
+            Assert.IsFalse(BlacksiteGameFlow.IsPlaying, "Victory should show the end state");
         }
     }
 }
