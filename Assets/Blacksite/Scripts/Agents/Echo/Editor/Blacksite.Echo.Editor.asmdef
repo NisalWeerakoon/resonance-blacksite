@@ -1,0 +1,14 @@
+{
+  "name": "Blacksite.Echo.Editor",
+  "rootNamespace": "Blacksite.Agents.Echo.Editor",
+  "references": ["Blacksite.Agents", "Blacksite.Shared"],
+  "includePlatforms": ["Editor"],
+  "excludePlatforms": [],
+  "allowUnsafeCode": false,
+  "overrideReferences": false,
+  "precompiledReferences": [],
+  "autoReferenced": true,
+  "defineConstraints": [],
+  "versionDefines": [],
+  "noEngineReferences": false
+}
