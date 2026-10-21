@@ -32,6 +32,13 @@ namespace Blacksite.Shared
             List<Vector3> pathBuffer);
     }
 
+    /// <summary>Optional graph lookup used by generic waypoint movement components.</summary>
+    public interface IWaypointNodeProvider
+    {
+        string NearestNodeId(Vector3 position);
+        bool HasNode(string nodeId);
+    }
+
     public interface IPortalState
     {
         string PortalId { get; }

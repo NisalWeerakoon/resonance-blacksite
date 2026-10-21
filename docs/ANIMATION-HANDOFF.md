@@ -22,6 +22,10 @@ Unity prefabs, but still need animation and movement before they are playable.
   colliders. `Assets/Blacksite/Sandboxes/TeamLead/CharacterReview.unity`
   places all four for inspection. **BLACKSITE → Audit character prefabs**
   repeats the import checks.
+- RIFT's humanoid rig is driven procedurally by
+  `Assets/Blacksite/Scripts/Agents/Rift/RiftProceduralAnimation.cs`, which
+  blends an idle pose with a walking gait using the waypoint motor's movement
+  state. The detailed FBX still has no authored animation clips.
 
 ## Animation teammate's work
 
@@ -44,8 +48,9 @@ Unity prefabs, but still need animation and movement before they are playable.
 - Primitive-generated UV layers exist but have **not** been carefully
   unwrapped or visually checked for final textures. The Unity URP materials
   are simple colour/metallic overrides, not final texture work.
-- Armatures and simple collision prefabs exist, but no animation clips, LODs,
-  detailed hitboxes or gameplay hookups are included. Visual cleanup remains.
+- Armatures and simple collision prefabs exist, but authored animation clips,
+  LODs, detailed hitboxes and gameplay hookups for the other characters are
+  not included. Visual cleanup remains.
 - Unity batch import and prefab audit passed in 6000.6.5f1. Play Mode,
   movement, animation and a target build remain unverified.
 
