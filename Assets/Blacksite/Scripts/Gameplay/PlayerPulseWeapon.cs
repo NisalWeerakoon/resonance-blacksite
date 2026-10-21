@@ -61,15 +61,9 @@ namespace Blacksite.Gameplay
             flashUntil = Time.time + .12f;
             recoil = .16f;
             WorldSignals.EmitNoise(viewCamera.transform.position, 1f);
-            Vector3 aim = viewCamera.transform.position + viewCamera.transform.forward * range;
-            if (Physics.Raycast(viewCamera.transform.position, viewCamera.transform.forward,
-                    out RaycastHit hit, range, ~0, QueryTriggerInteraction.Ignore)) aim = hit.point;
-            Vector3 muzzle = viewCamera.transform.TransformPoint(new Vector3(.24f, -.17f, .52f));
-            PulseProjectile.Launch(muzzle, aim - muzzle, transform, true, 55f, range, 0,
-                Color.cyan, "PLAYER", confirmed =>
-                {
-                    if (confirmed) hitConfirmUntil = Time.time + .25f;
-                });
+            Vector3 muzzle = viewCamera.transform.TransformPoint(new Vector3(.37f, -.28f, 1.33f));
+            if (PulseProjectile.FirePlayer(viewCamera, transform, muzzle, range))
+                hitConfirmUntil = Time.time + .25f;
         }
 
         private void LateUpdate()

@@ -60,7 +60,7 @@ namespace Blacksite.Gameplay
             GUI.color = new Color(.02f, .04f, .08f, .82f);
             GUI.DrawTexture(new Rect(0f, 0f, Screen.width, Screen.height), Texture2D.whiteTexture);
             GUI.color = Color.white;
-            GUI.Box(new Rect(left, top, width, 350f), "RESONANCE // BLACKSITE");
+            GUI.Box(new Rect(left, top, width, 350f), "RESONANCE // BLACKSITE — COMBAT FIX 2");
             string heading = !started ? "RECOVERY OPERATION" : mission.Won ?
                 "EXTRACTION COMPLETE" : "OPERATIVE DOWN";
             GUI.Label(new Rect(left + 30f, top + 55f, width - 60f, 35f), heading);

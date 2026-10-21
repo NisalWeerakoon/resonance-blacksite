@@ -133,5 +133,85 @@ namespace Blacksite.Tests
             }
             Time.captureFramerate = 0;
         }
+
+        [UnityTest]
+        public IEnumerator PlayerCanShootAndDisableEachRealAgentInTheWorld()
+        {
+            SceneManager.LoadScene("SubmissionPlayable");
+            yield return null;
+            var player = GameObject.Find("DemoPlayer_FPS");
+            var controller = player.GetComponent<CharacterController>();
+            var camera = player.GetComponentInChildren<Camera>();
+            var agents = new[] {
+                Object.FindFirstObjectByType<EchoBrain>().GetComponent<SubmissionAgentHealth>(),
+                Object.FindFirstObjectByType<BastionBrain>().GetComponent<SubmissionAgentHealth>(),
+                Object.FindFirstObjectByType<RiftBrain>().GetComponent<SubmissionAgentHealth>(),
+                Object.FindFirstObjectByType<TraceBrain>().GetComponent<SubmissionAgentHealth>()
+            };
+            foreach (WaypointAgentMotor motor in Object.FindObjectsByType<WaypointAgentMotor>())
+                motor.enabled = false;
+            Vector3[] offsets = { Vector3.right, Vector3.left, Vector3.forward, Vector3.back };
+            foreach (SubmissionAgentHealth agent in agents)
+            {
+                bool visible = false;
+                foreach (Vector3 offset in offsets)
+                {
+                    controller.enabled = false;
+                    player.transform.position = agent.transform.position + offset * 3f + Vector3.up;
+                    controller.enabled = true;
+                    camera.transform.rotation = Quaternion.LookRotation(
+                        agent.transform.position + Vector3.up * 1.1f - camera.transform.position);
+                    Physics.SyncTransforms();
+                    RaycastHit[] candidates = Physics.RaycastAll(camera.transform.position,
+                        camera.transform.forward, 8f, ~0, QueryTriggerInteraction.Ignore);
+                    System.Array.Sort(candidates, (a, b) => a.distance.CompareTo(b.distance));
+                    foreach (RaycastHit hit in candidates)
+                    {
+                        if (hit.transform.IsChildOf(player.transform)) continue;
+                        visible = hit.collider.GetComponentInParent<SubmissionAgentHealth>() == agent;
+                        break;
+                    }
+                    if (visible) break;
+                }
+                Assert.IsTrue(visible, agent.name + " must have a clear shootable approach");
+                for (int hit = 0; hit < 3; hit++)
+                    Assert.IsTrue(PulseProjectile.FirePlayer(camera, player.transform,
+                        camera.transform.position, 8f), agent.name + " should register shot " + hit);
+                Assert.IsFalse(agent.gameObject.activeInHierarchy,
+                    agent.name + " must be disabled by three player shots");
+            }
+        }
+
+        [UnityTest]
+        public IEnumerator EachAgentShootsPlayerFromBeyondContactDistance()
+        {
+            Time.captureFramerate = 60;
+            SceneManager.LoadScene("SubmissionPlayable");
+            yield return null;
+            var player = GameObject.Find("DemoPlayer_FPS");
+            var vitals = player.GetComponent<PlayerVitals>();
+            var controller = player.GetComponent<CharacterController>();
+            var agents = new[] {
+                Object.FindFirstObjectByType<EchoBrain>().GetComponent<SubmissionAgentHealth>(),
+                Object.FindFirstObjectByType<BastionBrain>().GetComponent<SubmissionAgentHealth>(),
+                Object.FindFirstObjectByType<RiftBrain>().GetComponent<SubmissionAgentHealth>(),
+                Object.FindFirstObjectByType<TraceBrain>().GetComponent<SubmissionAgentHealth>()
+            };
+            foreach (WaypointAgentMotor motor in Object.FindObjectsByType<WaypointAgentMotor>())
+                motor.enabled = false;
+            foreach (SubmissionAgentHealth agent in agents)
+            {
+                foreach (SubmissionAgentHealth other in agents)
+                    other.gameObject.SetActive(other == agent);
+                controller.enabled = false;
+                player.transform.position = agent.transform.position + Vector3.right * 4.5f + Vector3.up;
+                controller.enabled = true;
+                Physics.SyncTransforms();
+                int before = vitals.Health;
+                for (int frame = 0; frame < 125; frame++) yield return null;
+                Assert.Less(vitals.Health, before,
+                    agent.name + " should land a visible ranged shot at 4.5m");
+            }
+        }
     }
 }

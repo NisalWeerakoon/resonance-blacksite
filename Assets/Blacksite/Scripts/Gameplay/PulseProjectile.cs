@@ -2,103 +2,107 @@ using UnityEngine;
 
 namespace Blacksite.Gameplay
 {
+    // Fast visible tracer. Damage resolves at fire time, avoiding tiny per-frame
+    // collision checks that could miss the character while a bolt floated past.
     public sealed class PulseProjectile : MonoBehaviour
     {
-        private Transform owner;
-        private Vector3 velocity;
-        private float expires;
-        private int damage;
-        private string source;
-        private bool playerShot;
-        private PlayerVitals playerTarget;
-        private System.Action<bool> resolved;
+        private LineRenderer line;
+        private Material material;
+        private float born;
+        private const float Lifetime = .13f;
 
-        public static void Launch(Vector3 origin, Vector3 direction, Transform shooter, bool fromPlayer,
-            float speed, float range, int hitDamage, Color color, string label,
-            System.Action<bool> onResolved = null)
+        public static bool FirePlayer(Camera view, Transform shooter, Vector3 muzzle, float range)
         {
-            var bolt = GameObject.CreatePrimitive(PrimitiveType.Sphere);
-            bolt.name = label + "_Visible_Bolt";
-            Destroy(bolt.GetComponent<Collider>());
-            bolt.transform.position = origin;
-            bolt.transform.localScale = Vector3.one * (fromPlayer ? .18f : .25f);
-            var renderer = bolt.GetComponent<Renderer>();
+            if (view == null) return false;
+            Vector3 origin = view.transform.position;
+            Vector3 direction = view.transform.forward;
+            Vector3 end = origin + direction * range;
+            SubmissionAgentHealth target = null;
+            foreach (RaycastHit hit in Physics.RaycastAll(origin, direction, range,
+                         ~0, QueryTriggerInteraction.Ignore).OrderByDistance())
+            {
+                if (hit.transform.IsChildOf(shooter)) continue;
+                end = hit.point;
+                target = hit.collider.GetComponentInParent<SubmissionAgentHealth>();
+                break;
+            }
+            bool confirmed = target != null && target.gameObject.activeInHierarchy;
+            if (confirmed) target.TakeHit();
+            Draw(muzzle, end, Color.cyan, "PLAYER");
+            return confirmed;
+        }
+
+        public static bool FireEnemy(Vector3 muzzle, Vector3 destination, Transform shooter,
+            PlayerVitals player, int damage, Color color, string label)
+        {
+            if (player == null || player.IsDead) return false;
+            Vector3 delta = destination - muzzle;
+            float range = delta.magnitude;
+            Vector3 end = destination;
+            bool blocked = false;
+            foreach (RaycastHit hit in Physics.RaycastAll(muzzle, delta.normalized, range,
+                         ~0, QueryTriggerInteraction.Ignore).OrderByDistance())
+            {
+                if (hit.transform.IsChildOf(shooter)) continue;
+                if (hit.collider.GetComponentInParent<PlayerVitals>() != null) break;
+                // The aim point may be above the capsule. World cover still blocks.
+                if (hit.distance < range - .7f)
+                {
+                    end = hit.point;
+                    blocked = true;
+                }
+                break;
+            }
+            Draw(muzzle, end, color, label);
+            if (blocked) return false;
+            player.TakeDamage(damage, label);
+            return true;
+        }
+
+        private static void Draw(Vector3 from, Vector3 to, Color color, string label)
+        {
+            var visual = new GameObject(label + "_Shot_Tracer");
+            var tracer = visual.AddComponent<PulseProjectile>();
+            tracer.line = visual.AddComponent<LineRenderer>();
+            tracer.line.useWorldSpace = true;
+            tracer.line.positionCount = 2;
+            tracer.line.SetPosition(0, from);
+            tracer.line.SetPosition(1, to);
+            tracer.line.startWidth = .085f;
+            tracer.line.endWidth = .025f;
+            tracer.line.numCapVertices = 4;
             var shader = Shader.Find("Universal Render Pipeline/Unlit");
             if (shader == null) shader = Shader.Find("Unlit/Color");
-            renderer.material = new Material(shader);
-            renderer.material.color = color;
-            var trail = bolt.AddComponent<TrailRenderer>();
-            trail.time = .22f;
-            trail.startWidth = fromPlayer ? .16f : .23f;
-            trail.endWidth = 0f;
-            trail.material = renderer.material;
-            trail.startColor = color;
-            trail.endColor = new Color(color.r, color.g, color.b, 0f);
-            var projectile = bolt.AddComponent<PulseProjectile>();
-            projectile.owner = shooter;
-            projectile.velocity = direction.normalized * speed;
-            projectile.expires = Time.time + range / speed;
-            projectile.damage = hitDamage;
-            projectile.source = label;
-            projectile.playerShot = fromPlayer;
-            if (!fromPlayer) projectile.playerTarget = FindFirstObjectByType<PlayerVitals>();
-            projectile.resolved = onResolved;
+            tracer.material = new Material(shader);
+            tracer.material.color = color;
+            tracer.line.material = tracer.material;
+            tracer.line.startColor = color;
+            tracer.line.endColor = color;
+            tracer.born = Time.time;
         }
 
         private void Update()
         {
-            if (!BlacksiteGameFlow.IsPlaying) return;
-            if (Time.time >= expires) { Finish(false); return; }
-            Vector3 delta = velocity * Time.deltaTime;
-            if (!playerShot && playerTarget != null)
-            {
-                Vector3 center = playerTarget.transform.position + Vector3.up;
-                Vector3 closest = transform.position + Vector3.Project(center - transform.position,
-                    velocity.normalized);
-                float travel = Vector3.Dot(closest - transform.position, velocity.normalized);
-                if (travel >= 0f && travel <= delta.magnitude &&
-                    Vector3.Distance(closest, center) <= .8f)
-                {
-                    playerTarget.TakeDamage(damage, source);
-                    transform.position = closest;
-                    Finish(true);
-                    return;
-                }
-            }
-            RaycastHit? nearest = null;
-            foreach (RaycastHit hit in Physics.RaycastAll(transform.position, velocity.normalized,
-                         delta.magnitude, ~0, QueryTriggerInteraction.Ignore))
-            {
-                if (owner != null && hit.transform.IsChildOf(owner)) continue;
-                if (!playerShot && Vector3.Distance(transform.position, owner.position) < .65f &&
-                    hit.collider.GetComponentInParent<PlayerVitals>() == null) continue;
-                if (!nearest.HasValue || hit.distance < nearest.Value.distance) nearest = hit;
-            }
-            if (nearest.HasValue)
-            {
-                bool hitTarget = false;
-                if (playerShot)
-                {
-                    var target = nearest.Value.collider.GetComponentInParent<SubmissionAgentHealth>();
-                    if (target != null) { target.TakeHit(); hitTarget = true; }
-                }
-                else
-                {
-                    var target = nearest.Value.collider.GetComponentInParent<PlayerVitals>();
-                    if (target != null) { target.TakeDamage(damage, source); hitTarget = true; }
-                }
-                transform.position = nearest.Value.point;
-                if (!playerShot) Debug.Log($"BLACKSITE_BOLT impact={nearest.Value.collider.name} target={hitTarget}");
-                Finish(hitTarget);
-                return;
-            }
-            transform.position += delta;
+            float remaining = 1f - (Time.time - born) / Lifetime;
+            if (remaining <= 0f) { Destroy(gameObject); return; }
+            Color tint = line.startColor;
+            tint.a = remaining;
+            line.startColor = tint;
+            line.endColor = tint;
         }
 
-        private void Finish(bool hit)
+        private void OnDestroy()
         {
-            resolved?.Invoke(hit);
-            Destroy(gameObject);
+            if (material != null) Destroy(material);
+        }
+    }
+
+    internal static class RaycastHitSorting
+    {
+        public static RaycastHit[] OrderByDistance(this RaycastHit[] hits)
+        {
+            System.Array.Sort(hits, (a, b) => a.distance.CompareTo(b.distance));
+            return hits;
         }
     }
 }
