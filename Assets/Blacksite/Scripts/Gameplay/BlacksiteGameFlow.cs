@@ -17,7 +17,7 @@ namespace Blacksite.Gameplay
             started = Application.isBatchMode ||
                 System.Array.IndexOf(System.Environment.GetCommandLineArgs(), "-skipTitle") >= 0;
             IsPlaying = started;
-            Time.timeScale = started ? 1f : 0f;
+            Time.timeScale = 1f;
             Cursor.lockState = CursorLockMode.None;
             Cursor.visible = true;
         }
@@ -35,10 +35,12 @@ namespace Blacksite.Gameplay
             if (mission.Won || mission.Lost)
             {
                 IsPlaying = false;
-                // Pausing editor batch runs also pauses UnityTest scheduling.
-                if (!Application.isBatchMode) Time.timeScale = 0f;
                 Cursor.lockState = CursorLockMode.None;
                 Cursor.visible = true;
+                Keyboard keyboard = Keyboard.current;
+                if (keyboard != null && (keyboard.rKey.wasPressedThisFrame ||
+                    keyboard.enterKey.wasPressedThisFrame || keyboard.spaceKey.wasPressedThisFrame))
+                    RetryMission();
             }
         }
 
@@ -75,7 +77,7 @@ namespace Blacksite.Gameplay
                     !started ? "START MISSION  [ENTER]" : "RETRY MISSION"))
             {
                 if (!started) StartMission();
-                else SceneManager.LoadScene(SceneManager.GetActiveScene().buildIndex);
+                else RetryMission();
             }
         }
 
@@ -86,6 +88,12 @@ namespace Blacksite.Gameplay
             Time.timeScale = 1f;
             Cursor.lockState = CursorLockMode.Locked;
             Cursor.visible = false;
+        }
+
+        private static void RetryMission()
+        {
+            Time.timeScale = 1f;
+            SceneManager.LoadScene(SceneManager.GetActiveScene().buildIndex);
         }
     }
 }

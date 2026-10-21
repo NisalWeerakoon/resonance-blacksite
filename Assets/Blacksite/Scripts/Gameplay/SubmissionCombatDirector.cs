@@ -43,24 +43,28 @@ namespace Blacksite.Gameplay
         {
             if (!BlacksiteGameFlow.IsPlaying) return;
             if (player == null || player.IsDead || agents == null || agents.Length < 4) return;
-            // Each teammate's brain continues to choose its own route. These are its
-            // distinct attack consequences once it has physically reached the player.
-            ProximityAttack(0, 3.3f, 9, 1.5f);  // ECHO sonic shock.
-            ProximityAttack(1, 12f, 12, 1.4f); // BASTION ranged blast.
-            ProximityAttack(2, 2.6f, 16, 1.9f); // RIFT close-range lunge.
-            ProximityAttack(3, 2.8f, 11, 1.3f); // TRACE interception strike.
+            // Brains handle pursuit, cover, flanking and interception. The attack
+            // layer gives each visible opponent a distinct, dodgeable ranged shot.
+            RangedAttack(0, 14f, 8, 2.1f, 10f, Color.cyan);
+            RangedAttack(1, 23f, 11, 1.25f, 23f, new Color(1f, .5f, .08f));
+            RangedAttack(2, 11f, 14, 1.55f, 19f, Color.red);
+            RangedAttack(3, 20f, 10, 1.7f, 32f, Color.magenta);
         }
 
-        private void ProximityAttack(int index, float range, int damage, float cooldown)
+        private void RangedAttack(int index, float range, int damage, float cooldown,
+            float speed, Color color)
         {
             if (agents[index] == null || !agents[index].gameObject.activeInHierarchy ||
                 Time.time < nextAttack[index]) return;
-            Vector3 origin = agents[index].transform.position + Vector3.up;
+            Vector3 origin = agents[index].transform.position + Vector3.up * 1.45f;
             Vector3 destination = player.transform.position + Vector3.up;
-            if (Vector3.Distance(origin, destination) > range ||
-                !ClearShot(origin, destination, agents[index].transform)) return;
+            float distance = Vector3.Distance(origin, destination);
+            if (distance > range ||
+                (distance > 3f && !ClearShot(origin, destination, agents[index].transform))) return;
             nextAttack[index] = Time.time + cooldown;
-            player.TakeDamage(damage, names[index]);
+            Debug.Log($"BLACKSITE_BOLT fire={names[index]} distance={distance:0.0}");
+            PulseProjectile.Launch(origin, destination - origin, agents[index].transform,
+                false, speed, range, damage, color, names[index]);
         }
 
         private void OnBastionAttack(Transform target)
@@ -72,7 +76,8 @@ namespace Blacksite.Gameplay
             if (Vector3.Distance(origin, destination) > 24f ||
                 !ClearShot(origin, destination, bastion.transform)) return;
             nextAttack[1] = Time.time + 1.2f;
-            player.TakeDamage(12, "BASTION");
+            PulseProjectile.Launch(origin, destination - origin, bastion.transform,
+                false, 23f, 24f, 11, new Color(1f, .5f, .08f), "BASTION");
         }
 
         private bool ClearShot(Vector3 from, Vector3 to, Transform attacker)

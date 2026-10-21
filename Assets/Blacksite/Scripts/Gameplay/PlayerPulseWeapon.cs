@@ -16,6 +16,10 @@ namespace Blacksite.Gameplay
         private float hitConfirmUntil;
         private int ammo;
         private BlacksiteMission mission;
+        private Transform viewmodel;
+        private Vector3 restingPosition;
+        private float recoil;
+        private float reloadStartedAt;
 
         public int Ammo => ammo;
         public bool Reloading => reloadCompleteAt > Time.time;
@@ -30,6 +34,11 @@ namespace Blacksite.Gameplay
         private void Start()
         {
             if (mission == null) mission = FindFirstObjectByType<BlacksiteMission>();
+            if (viewCamera != null)
+            {
+                viewmodel = viewCamera.transform.Find("Pulse_Carbine_Viewmodel");
+                if (viewmodel != null) restingPosition = viewmodel.localPosition;
+            }
         }
 
         private void Update()
@@ -50,18 +59,35 @@ namespace Blacksite.Gameplay
             ammo--;
             nextFire = Time.time + fireInterval;
             flashUntil = Time.time + .12f;
+            recoil = .16f;
             WorldSignals.EmitNoise(viewCamera.transform.position, 1f);
-            if (!Physics.Raycast(viewCamera.transform.position, viewCamera.transform.forward,
-                    out RaycastHit hit, range, ~0, QueryTriggerInteraction.Ignore)) return;
-            SubmissionAgentHealth health = hit.collider.GetComponentInParent<SubmissionAgentHealth>();
-            if (health != null)
-            {
-                health.TakeHit();
-                hitConfirmUntil = Time.time + .22f;
-            }
+            Vector3 aim = viewCamera.transform.position + viewCamera.transform.forward * range;
+            if (Physics.Raycast(viewCamera.transform.position, viewCamera.transform.forward,
+                    out RaycastHit hit, range, ~0, QueryTriggerInteraction.Ignore)) aim = hit.point;
+            Vector3 muzzle = viewCamera.transform.TransformPoint(new Vector3(.24f, -.17f, .52f));
+            PulseProjectile.Launch(muzzle, aim - muzzle, transform, true, 55f, range, 0,
+                Color.cyan, "PLAYER", confirmed =>
+                {
+                    if (confirmed) hitConfirmUntil = Time.time + .25f;
+                });
         }
 
-        private void StartReload() => reloadCompleteAt = Time.time + reloadSeconds;
+        private void LateUpdate()
+        {
+            if (viewmodel == null) return;
+            recoil = Mathf.MoveTowards(recoil, 0f, Time.deltaTime * .7f);
+            float reloadDip = Reloading ?
+                Mathf.Sin(Mathf.PI * (Time.time - reloadStartedAt) / reloadSeconds) * .34f : 0f;
+            viewmodel.localPosition = Vector3.Lerp(viewmodel.localPosition,
+                restingPosition + new Vector3(0f, -reloadDip, -recoil), Time.deltaTime * 16f);
+            viewmodel.localRotation = Quaternion.Euler(Reloading ? reloadDip * 60f : recoil * 35f, 0f, 0f);
+        }
+
+        private void StartReload()
+        {
+            reloadStartedAt = Time.time;
+            reloadCompleteAt = Time.time + reloadSeconds;
+        }
 
         private void OnGUI()
         {

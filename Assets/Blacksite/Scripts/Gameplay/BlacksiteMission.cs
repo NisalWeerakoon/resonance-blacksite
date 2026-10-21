@@ -1,5 +1,4 @@
 using UnityEngine;
-using UnityEngine.SceneManagement;
 
 namespace Blacksite.Gameplay
 {
@@ -48,8 +47,6 @@ namespace Blacksite.Gameplay
         private void Update()
         {
             if (!BlacksiteGameFlow.IsPlaying && !won && !lost) return;
-            if (BlacksiteInput.Pressed(KeyCode.R) && (won || lost))
-                SceneManager.LoadScene(SceneManager.GetActiveScene().buildIndex);
             if (won || lost || player == null) return;
             if (vitals != null && vitals.IsDead)
             {

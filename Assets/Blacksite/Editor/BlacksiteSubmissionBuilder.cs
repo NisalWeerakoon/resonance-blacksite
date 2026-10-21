@@ -124,6 +124,8 @@ namespace Blacksite.Editor
                     new[] { Color.cyan, new Color(1f, .45f, .1f), Color.red, Color.magenta }[i]);
             }
             mission.Configure(player, core.gameObject, extraction.transform, health, relays);
+            runtime.AddComponent<ObjectiveGuide>().Configure(player, camera, mission,
+                relays, core, extraction.transform);
             runtime.AddComponent<SubmissionCombatDirector>().Configure(
                 player.GetComponent<PlayerVitals>(), health, bastion);
             runtime.AddComponent<BlacksiteGameFlow>().Configure(mission);
