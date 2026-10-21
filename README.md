@@ -53,8 +53,9 @@ R after a win or capture to retry. ECHO, BASTION, RIFT and TRACE are included
 with their feature-branch logic and scene motors. The target scene is the only
 enabled Build Settings scene.
 
-Automated Unity 6000.6.5f1 validation: 34/34 EditMode and 5/5 PlayMode tests
-passed on October 21, including a four-agent scene load, route and mission
-pickup/extraction checks. These tests do not establish visual polish,
+Automated Unity 6000.6.5f1 validation: 34/34 EditMode and 9/9 PlayMode tests
+passed on October 21, including a four-agent scene load, agent decisions and
+physical movement, route, combat/capture and mission pickup/extraction checks.
+These tests do not establish visual polish,
 animation quality or full human playthrough; see `docs/VALIDATION.md`.
 

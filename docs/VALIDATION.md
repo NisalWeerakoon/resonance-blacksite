@@ -10,9 +10,12 @@
   movable barricade, cover, decoy/noise responses, a pulse weapon, and a
   core-pickup/return-to-entry win condition with capture/retry state.
 - Unity 6000.6.5f1 EditMode suite: **34 passed, 0 failed**.
-- Unity 6000.6.5f1 PlayMode suite: **5 passed, 0 failed**. Scene tests load the
+- Unity 6000.6.5f1 PlayMode suite: **9 passed, 0 failed**. Scene tests load the
   saved submission scene and check four brains/motors, entry-to-core A* route,
-  two doors, barricade, no missing runtime components, pickup and extraction.
+  two doors, barricade, no missing runtime components, pickup and extraction,
+  agent perception/decisions, pulse-hit disable, capture, and RIFT physical
+  corridor motion. A navigation-collider omission was found and fixed in the
+  submitted scene before these final checks.
 - Windows x64 standalone build **succeeded with 0 build errors**. A headless
   launch initialized the built player and loaded the scene without a logged
   exception; it was stopped after startup because the game normally keeps

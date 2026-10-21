@@ -58,6 +58,7 @@ namespace Blacksite.Editor
             var world = runtime.AddComponent<EchoWorldContext>();
             runtime.AddComponent<EchoWorldSignalBridge>();
             var echoMotor = EnsureMotor(echoRoot, graph);
+            EnsureNavigationCollider(echoRoot, .35f, 1.8f);
             var echo = echoRoot.gameObject.AddComponent<EchoBrain>();
             SetReference(echo, "world", world);
             SetReference(echo, "sharedMotor", echoMotor);
@@ -67,6 +68,7 @@ namespace Blacksite.Editor
             var planner = graph.gameObject.AddComponent<ExistingGraphPathPlanner>();
             planner.ConfigureSandbox(graph);
             var bastionMotor = EnsureMotor(bastionRoot, graph);
+            EnsureNavigationCollider(bastionRoot, .55f, 2f);
             var bastion = bastionRoot.gameObject.AddComponent<BastionBrain>();
             var eye = new GameObject("BASTION_Eye");
             eye.transform.SetParent(bastionRoot, false);
@@ -79,11 +81,13 @@ namespace Blacksite.Editor
 
             var rift = riftRoot.GetComponent<RiftBrain>();
             var riftMotor = EnsureMotor(riftRoot, graph);
+            EnsureNavigationCollider(riftRoot, .35f, 1.8f);
             SetReference(rift, "motor", riftMotor);
             SetReference(rift, "flankPoint", Find("SUB_WP_SECURITY"));
             AddPortals(riftRoot, rift, portals);
 
             var traceMotor = EnsureMotor(traceRoot, graph);
+            EnsureNavigationCollider(traceRoot, .35f, 1.8f);
             var trace = traceRoot.GetComponent<TraceBrain>();
             SetReference(trace, "graph", graph);
             var intercepts = AddIntercepts(runtime.transform);
@@ -176,6 +180,16 @@ namespace Blacksite.Editor
             if (motor == null) motor = root.gameObject.AddComponent<WaypointAgentMotor>();
             SetReference(motor, "graphComponent", graph);
             return motor;
+        }
+
+        private static void EnsureNavigationCollider(Transform root, float radius, float height)
+        {
+            if (root.GetComponent<CharacterController>() != null) return;
+            var capsule = root.GetComponent<CapsuleCollider>();
+            if (capsule == null) capsule = root.gameObject.AddComponent<CapsuleCollider>();
+            capsule.radius = radius;
+            capsule.height = height;
+            capsule.center = Vector3.up * (height * .5f);
         }
 
         private static void AddSight(Transform root, MonoBehaviour brain, Transform player)
