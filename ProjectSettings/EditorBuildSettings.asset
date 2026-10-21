@@ -4,6 +4,8 @@
 EditorBuildSettings:
   m_ObjectHideFlags: 0
   serializedVersion: 2
-  m_Scenes: []
+  m_Scenes:
+  - enabled: 1
+    path: Assets/Blacksite/Scenes/Integration/SubmissionPlayable.unity
+    guid: 0edca961819add845a6bed6f33f2ccd7
   m_configObjects: {}
-  m_UseUCBPForAssetBundles: 0

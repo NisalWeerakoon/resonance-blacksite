@@ -1,5 +1,27 @@
 # Validation record
 
+## 2026-10-21 submission integration
+
+- Merged Agent Controller/RIFT, Systems/BASTION and World Builder/ECHO feature
+  branches into `integration/submission-2026-10-21`. Team feature branches and
+  the World Builder's original level scene were preserved.
+- Built `SubmissionPlayable.unity` with the World Builder environment, four
+  active agent brains/motors, a 12-node waypoint graph, two usable doors, one
+  movable barricade, cover, decoy/noise responses, a pulse weapon, and a
+  core-pickup/return-to-entry win condition with capture/retry state.
+- Unity 6000.6.5f1 EditMode suite: **34 passed, 0 failed**.
+- Unity 6000.6.5f1 PlayMode suite: **5 passed, 0 failed**. Scene tests load the
+  saved submission scene and check four brains/motors, entry-to-core A* route,
+  two doors, barricade, no missing runtime components, pickup and extraction.
+- Windows x64 standalone build **succeeded with 0 build errors**. A headless
+  launch initialized the built player and loaded the scene without a logged
+  exception; it was stopped after startup because the game normally keeps
+  running. The build output is kept outside the Git checkout.
+- The submitted copy removes nonportable legacy World Builder data component
+  references that reported as missing at runtime; original source scene remains.
+- These checks are automated. A human visual playthrough, animation quality,
+  performance and captured submission evidence remain unverified until done.
+
 ## 2026-10-13 foundation check
 
 - Repository structure: created.

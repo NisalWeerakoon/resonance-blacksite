@@ -38,5 +38,23 @@ See [CONTRIBUTING.md](CONTRIBUTING.md), [docs/ARCHITECTURE.md](docs/ARCHITECTURE
 - **October 19–20:** stability, profiling, evidence capture, video, and viva preparation.
 - **October 21, 2026:** Graphics submission.
 
-Unity 6000.6.5f1 batch-mode model import and 4/4 EditMode tests passed on October 18; the user's Editor Console showed two warnings and zero red errors. Play Mode, animation and an integrated build are not yet verified; see `docs/VALIDATION.md`. The player prototype uses the classic Input Manager; set Active Input Handling to **Both** or **Input Manager (Old)** if Unity prompts for it.
+On October 18, Unity 6000.6.5f1 imported the models and passed 4/4 then-current
+EditMode tests. The player prototype uses the classic Input Manager; set Active
+Input Handling to **Both** or **Input Manager (Old)** if Unity prompts for it.
+
+## Submission playable scene (October 21)
+
+Open `Assets/Blacksite/Scenes/Integration/SubmissionPlayable.unity` in Unity
+6000.6.5f1 and press Play. This is a copy of the World Builder integration scene;
+her original `Assets/Scenes/final.unity` remains untouched. Move with WASD and
+mouse, use left click for a pulse shot, E near the core to collect it or near
+systems to interact, G to throw a decoy, and return to ENTRY to extract. Press
+R after a win or capture to retry. ECHO, BASTION, RIFT and TRACE are included
+with their feature-branch logic and scene motors. The target scene is the only
+enabled Build Settings scene.
+
+Automated Unity 6000.6.5f1 validation: 34/34 EditMode and 5/5 PlayMode tests
+passed on October 21, including a four-agent scene load, route and mission
+pickup/extraction checks. These tests do not establish visual polish,
+animation quality or full human playthrough; see `docs/VALIDATION.md`.
 

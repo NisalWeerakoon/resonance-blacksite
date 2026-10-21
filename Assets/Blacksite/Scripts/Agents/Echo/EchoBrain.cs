@@ -1,4 +1,5 @@
 using System.Collections.Generic;
+using Blacksite.Agents.Movement;
 using Blacksite.Shared;
 using UnityEngine;
 
@@ -13,6 +14,7 @@ namespace Blacksite.Agents.Echo
     {
         [SerializeField] private EchoWorldContext world;
         [SerializeField] private EchoDemoPathFollower demoMotor;
+        [SerializeField] private WaypointAgentMotor sharedMotor;
         [SerializeField, Range(0.1f, 1.5f)] private float decisionIntervalSeconds = 0.35f;
 
         private EchoPerceptionMemory memory = new EchoPerceptionMemory();
@@ -39,13 +41,15 @@ namespace Blacksite.Agents.Echo
         public int AcousticNodesExpanded => lastPropagation == null ? 0 : lastPropagation.NodesExpanded;
         public int HeardSoundId => selectedNoiseId;
         public string LastReason => lastReason;
-        public int WaypointCount => demoMotor == null ? 0 : demoMotor.WaypointCount;
+        public int WaypointCount => sharedMotor != null ? sharedMotor.CurrentRoute.Count :
+            demoMotor == null ? 0 : demoMotor.WaypointCount;
         public Vector3 RememberedTarget => rememberedTarget;
 
         private void Awake()
         {
             if (world == null) world = FindFirstObjectByType<EchoWorldContext>();
             if (demoMotor == null) demoMotor = GetComponent<EchoDemoPathFollower>();
+            if (sharedMotor == null) sharedMotor = GetComponent<WaypointAgentMotor>();
         }
 
         private void OnEnable()
@@ -82,7 +86,7 @@ namespace Blacksite.Agents.Echo
 
         public override void TickDecision(float deltaTime)
         {
-            if (world == null || demoMotor == null) return;
+            if (world == null || sharedMotor == null && demoMotor == null) return;
             sinceTick += Mathf.Max(0f, deltaTime);
             if (sinceTick < decisionIntervalSeconds && !needReplan) return;
             sinceTick = 0f;
@@ -138,7 +142,7 @@ namespace Blacksite.Agents.Echo
                 string destinationRoom = patrolIndex % 2 == 0 ? EchoRoomIds.Acoustic : EchoRoomIds.Security;
                 destination = world.Spatial.Position(destinationRoom);
                 hasDestination = true;
-                if (!demoMotor.Moving && !needReplan)
+                if (!MotorMoving && !needReplan)
                 {
                     patrolIndex++;
                     destinationRoom = patrolIndex % 2 == 0 ? EchoRoomIds.Acoustic : EchoRoomIds.Security;
@@ -150,7 +154,7 @@ namespace Blacksite.Agents.Echo
             bool changedAction = newAction != action;
             action = newAction;
             if (changedAction) needReplan = true;
-            if (hasDestination && (needReplan || (!demoMotor.Moving &&
+            if (hasDestination && (needReplan || (!MotorMoving &&
                 newAction != EchoAction.SearchLastKnown && Time.time - lastReplanTime > 1.5f)))
             {
                 needReplan = false;
@@ -158,15 +162,20 @@ namespace Blacksite.Agents.Echo
                 if (world.TrySpatialPath(transform.position, destination, path))
                 {
                     // The generated demo follows these waypoints; production uses the shared motor.
-                    demoMotor.Follow(path);
+                    if (sharedMotor != null) sharedMotor.SetRoute(path);
+                    else demoMotor.Follow(path);
                     lastReason = newAction + ": planned " + path.Count + " waypoints";
                 }
                 else
                 {
-                    demoMotor.Stop();
+                    if (sharedMotor != null) sharedMotor.ClearDestination();
+                    else demoMotor.Stop();
                     lastReason = "Unreachable route: stop safely / retry after change";
                 }
             }
         }
+
+        private bool MotorMoving => sharedMotor != null ? sharedMotor.IsMoving :
+            demoMotor != null && demoMotor.Moving;
     }
 }
