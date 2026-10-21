@@ -32,13 +32,13 @@ namespace Blacksite.Gameplay
 
         private void Update()
         {
-            if (Input.GetKeyDown(KeyCode.R) && (won || lost))
+            if (BlacksiteInput.Pressed(KeyCode.R) && (won || lost))
                 SceneManager.LoadScene(SceneManager.GetActiveScene().buildIndex);
             if (won || lost || player == null) return;
 
             if (!hasCore && coreVisual != null &&
                 Vector3.Distance(player.position, coreVisual.transform.position) <= pickupRange &&
-                Input.GetKeyDown(KeyCode.E))
+                BlacksiteInput.Pressed(KeyCode.E))
                 TryCollectCore();
             if (hasCore && extractionPoint != null &&
                 Vector3.Distance(player.position, extractionPoint.position) <= extractionRange)

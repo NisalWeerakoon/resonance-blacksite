@@ -17,7 +17,7 @@ namespace Blacksite.Gameplay
 
         private void Update()
         {
-            if (!Input.GetMouseButtonDown(0) || Time.time < nextFire || viewCamera == null) return;
+            if (!BlacksiteInput.FirePressed() || Time.time < nextFire || viewCamera == null) return;
             nextFire = Time.time + fireInterval;
             WorldSignals.EmitNoise(viewCamera.transform.position, 1f);
             if (!Physics.Raycast(viewCamera.transform.position, viewCamera.transform.forward,

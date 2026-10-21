@@ -1,7 +1,7 @@
 {
   "name": "Blacksite.SystemsPlayModeTests",
   "rootNamespace": "Blacksite.Tests",
-  "references": ["Blacksite.Shared", "Blacksite.Gameplay", "Blacksite.Agents"],
+  "references": ["Blacksite.Shared", "Blacksite.Gameplay", "Blacksite.Agents", "Unity.InputSystem", "Unity.InputSystem.TestFramework"],
   "optionalUnityReferences": ["TestAssemblies"],
   "includePlatforms": [],
   "excludePlatforms": [],

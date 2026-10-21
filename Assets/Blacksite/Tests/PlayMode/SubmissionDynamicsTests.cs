@@ -38,7 +38,9 @@ namespace Blacksite.Tests
             rift.enabled = false;
             Vector3 start = rift.transform.position;
             Assert.IsTrue(motor.SetDestination(new Vector3(8f, 0f, -10f)));
-            yield return new WaitForSeconds(1.5f);
+            Time.captureFramerate = 60;
+            for (int frame = 0; frame < 120; frame++) yield return null;
+            Time.captureFramerate = 0;
             Assert.Greater(Vector3.Distance(start, rift.transform.position), .35f,
                 "RIFT should physically move along a world corridor");
         }

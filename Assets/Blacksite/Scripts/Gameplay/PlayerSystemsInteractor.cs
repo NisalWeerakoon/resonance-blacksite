@@ -25,7 +25,7 @@ namespace Blacksite.Gameplay
         private void Update()
         {
             if (viewCamera == null) return;
-            if (Input.GetKeyDown(interactKey) &&
+            if (BlacksiteInput.Pressed(interactKey) &&
                 Physics.Raycast(viewCamera.transform.position, viewCamera.transform.forward,
                     out RaycastHit hit, interactRange, ~0, QueryTriggerInteraction.Collide))
             {
@@ -37,7 +37,7 @@ namespace Blacksite.Gameplay
                     if (barricade != null) barricade.Push(viewCamera.transform.forward);
                 }
             }
-            if (Input.GetKeyDown(throwKey) && decoyPrefab != null)
+            if (BlacksiteInput.Pressed(throwKey) && decoyPrefab != null)
             {
                 Vector3 position = viewCamera.transform.position + viewCamera.transform.forward * 0.8f;
                 ThrowableDecoy decoy = Instantiate(decoyPrefab, position, Quaternion.identity);
