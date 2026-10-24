@@ -29,8 +29,7 @@ namespace Blacksite.Gameplay
         private CoverPoint[] coverPoints = System.Array.Empty<CoverPoint>();
         private static readonly float[] SightRanges = { 18f, 25f, 20f, 23f };
         private const float SightFieldOfView = 150f;
-        private const float IntelMemorySeconds = 14f;
-        private const float OpeningSearchSeconds = 7f;
+        private const float IntelMemorySeconds = 45f;
         private float nextTactic;
         private float lastTacticAt;
         private Vector3 lastPlayerPosition;
@@ -129,9 +128,9 @@ namespace Blacksite.Gameplay
                 switch (i)
                 {
                     case 0:
-                        // Echo's authored acoustic brain chooses routes to sounds. The
-                        // director only supplies the last known point for the opening sweep.
-                        if (!playerVisible[i] && Time.time - lastIntelTimes[i] > OpeningSearchSeconds)
+                        // Echo's brain prioritizes acoustic evidence; keep the motor
+                        // searching the last known point after recovery or lost contact.
+                        if (!playerVisible[i])
                         {
                             if (!motor.HasDestination || motor.HasArrived) SetSearchDestination(i, motor);
                             tactics[i] = "INVESTIGATING SOUND";
@@ -209,18 +208,26 @@ namespace Blacksite.Gameplay
                 if (!retreating[i] && health.ShouldRetreat) BeginRetreat(i);
                 if (!retreating[i]) continue;
 
-                bool hidden = IsAtRetreatCover(i) && IsHiddenFromPlayer(i);
+                bool hidden = IsAtRetreatCover(i) &&
+                    (!playerVisible[i] || IsHiddenFromPlayer(i));
                 health.RecoverWhileHidden(hidden, deltaTime);
                 if (!health.ShouldRetreat)
                 {
                     retreating[i] = false;
                     ReleaseRetreatCover(i);
+                    hasIntel[i] = true;
+                    lastIntelTimes[i] = Time.time;
+                    searchPasses[i] = 0;
                     if (i != 1)
                     {
                         AgentBrainBase brain = agents[i].GetComponent<AgentBrainBase>();
                         if (brain != null && brainWasEnabled[i]) brain.enabled = true;
                     }
-                    if (i == 1 && bastion != null) bastion.SetHealthFraction(health.HealthFraction);
+                    if (i == 1 && bastion != null)
+                    {
+                        bastion.SetHealthFraction(health.HealthFraction);
+                        bastion.Observe(new WorldObservation(lastKnownPositions[i], .35f, Time.timeAsDouble));
+                    }
                     var motor = agents[i].GetComponent<WaypointAgentMotor>();
                     if (i != 1 && motor != null && hasIntel[i]) motor.SetDestination(lastKnownPositions[i]);
                 }
@@ -359,7 +366,8 @@ namespace Blacksite.Gameplay
             Vector3 center = lastKnownPositions[index];
             int pass = searchPasses[index]++;
             float angle = (pass * 90f + index * 90f) * Mathf.Deg2Rad;
-            float radius = pass == 0 ? 0f : 2.5f + (pass % 2) * 1.5f;
+            int ring = pass == 0 ? 0 : (pass - 1) / 4 + 1;
+            float radius = Mathf.Min(ring * 3f + 2f, 14f);
             Vector3 offset = new Vector3(Mathf.Cos(angle), 0f, Mathf.Sin(angle)) * radius;
             motor.SetDestination(center + offset);
         }
