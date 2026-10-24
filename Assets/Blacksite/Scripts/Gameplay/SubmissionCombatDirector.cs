@@ -28,8 +28,8 @@ namespace Blacksite.Gameplay
         private readonly CoverPoint[] retreatCovers = new CoverPoint[4];
         private readonly int[] searchPasses = new int[4];
         private CoverPoint[] coverPoints = System.Array.Empty<CoverPoint>();
-        private static readonly float[] SightRanges = { 18f, 25f, 20f, 23f };
-        private const float SightFieldOfView = 150f;
+        private static readonly float[] SightRanges = { 18f, 25f, 40f, 23f };
+        private const float SightFieldOfView = 220f;
         private const float IntelMemorySeconds = 45f;
         private float nextTactic;
         private float lastTacticAt;
@@ -77,12 +77,23 @@ namespace Blacksite.Gameplay
                     RememberPlayerPosition(i, player.transform.position);
                     lastIntelTimes[i] = Time.time;
                     tactics[i] = "SEARCHING ENTRY";
-                    if (i == 0 && agents[i].TryGetComponent(out EchoBrain echo))
-                        echo.Observe(new WorldObservation(player.transform.position, .35f, Time.timeAsDouble));
+                    postRetreatSearch[i] = true;
                     if (i == 1 && bastion != null)
                         bastion.Observe(new WorldObservation(player.transform.position, .35f, Time.timeAsDouble));
-                    if ((i == 2 || i == 3) && agents[i].TryGetComponent(out WaypointAgentMotor openingMotor))
-                        openingMotor.SetDestination(player.transform.position);
+                    else
+                    {
+                        AgentBrainBase brain = agents[i].GetComponent<AgentBrainBase>();
+                        if (brain != null)
+                        {
+                            brainWasEnabled[i] = brain.enabled;
+                            brain.enabled = false;
+                        }
+                        if (agents[i].TryGetComponent(out WaypointAgentMotor openingMotor))
+                        {
+                            openingMotor.ClearDestination();
+                            openingMotor.SetDestination(player.transform.position);
+                        }
+                    }
                 }
             }
             UpdateRetreats(Time.deltaTime);
@@ -151,53 +162,20 @@ namespace Blacksite.Gameplay
                     continue;
                 }
 
-                var motor = agents[i].GetComponent<WaypointAgentMotor>();
-                if (motor == null) continue;
-                Vector3 target = lastKnownPositions[i];
                 switch (i)
                 {
                     case 0:
-                        // Echo's brain prioritizes acoustic evidence; keep the motor
-                        // searching the last known point after recovery or lost contact.
-                        if (!playerVisible[i])
-                        {
-                            if (!motor.HasDestination || motor.HasArrived || motor.IsBlocked)
-                                SetSearchDestination(i, motor);
-                            tactics[i] = "INVESTIGATING SOUND";
-                        }
-                        else tactics[i] = playerVisible[i] ? "PLAYER SIGHTED" : "SEARCHING ENTRY";
+                        tactics[i] = playerVisible[i] ? "PLAYER SIGHTED" : "HUNTING SOUND";
                         break;
                     case 1:
                         // Bastion's behavior tree owns cover selection and last-seen search.
                         tactics[i] = playerVisible[i] ? "SUPPRESSING FROM COVER" : "SEARCHING LAST SIGHTING";
                         break;
                     case 2:
-                        if (playerVisible[i])
-                        {
-                            Vector3 lateral = Vector3.Cross(Vector3.up,
-                                (target - agents[i].transform.position).normalized);
-                            motor.SetDestination(target + lateral * 3f);
-                            tactics[i] = "FLANKING SIDE LANE";
-                        }
-                        else
-                        {
-                            if (!motor.HasDestination || motor.HasArrived || motor.IsBlocked)
-                                SetSearchDestination(i, motor);
-                            tactics[i] = "INVESTIGATING LAST SIGHTING";
-                        }
+                        tactics[i] = playerVisible[i] ? "FLANKING SIDE LANE" : "INVESTIGATING LAST SIGHTING";
                         break;
                     case 3:
-                        if (playerVisible[i])
-                        {
-                            motor.SetDestination(target + Vector3.ClampMagnitude(playerVelocity * 1.5f, 4f));
-                            tactics[i] = "INTERCEPTING ROUTE";
-                        }
-                        else
-                        {
-                            if (!motor.HasDestination || motor.HasArrived || motor.IsBlocked)
-                                SetSearchDestination(i, motor);
-                            tactics[i] = "SEARCHING LAST SIGHTING";
-                        }
+                        tactics[i] = playerVisible[i] ? "INTERCEPTING ROUTE" : "SEARCHING LAST SIGHTING";
                         break;
                 }
             }
@@ -214,6 +192,12 @@ namespace Blacksite.Gameplay
                     (agents[i].transform.position - noise.Position).sqrMagnitude > hearingRadiusSquared)
                     continue;
                 RememberPlayerPosition(i, noise.Position);
+                if (!retreating[i] && !postRetreatSearch[i] && i != 0)
+                {
+                    AgentBrainBase brain = agents[i].GetComponent<AgentBrainBase>();
+                    if (brain != null)
+                        brain.Observe(new WorldObservation(noise.Position, noise.Loudness, Time.timeAsDouble));
+                }
                 if (i == 1 && bastion != null)
                     bastion.Observe(new WorldObservation(noise.Position, noise.Loudness, Time.timeAsDouble));
                 if (retreating[i]) continue;
@@ -255,7 +239,11 @@ namespace Blacksite.Gameplay
                     if (i != 1)
                     {
                         AgentBrainBase brain = agents[i].GetComponent<AgentBrainBase>();
-                        if (brain != null) brain.enabled = false;
+                        if (brain != null)
+                        {
+                            if (brain.enabled) brainWasEnabled[i] = true;
+                            brain.enabled = false;
+                        }
                     }
                     if (i == 1 && bastion != null)
                     {
