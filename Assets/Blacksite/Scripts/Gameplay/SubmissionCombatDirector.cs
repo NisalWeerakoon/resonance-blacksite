@@ -29,8 +29,11 @@ namespace Blacksite.Gameplay
         private readonly CoverPoint[] retreatCovers = new CoverPoint[4];
         private readonly Vector3[] fallbackRetreatPositions = new Vector3[4];
         private readonly bool[] hasFallbackRetreatPosition = new bool[4];
-        private readonly float[] retreatStartedAt = new float[4];
+        private readonly float[] nextRetreatRouteAt = new float[4];
+        private readonly float[] lastRetreatProgressAt = new float[4];
+        private readonly Vector3[] lastRetreatPositions = new Vector3[4];
         private readonly float[] retreatPositionReachedAt = { -1f, -1f, -1f, -1f };
+        private static readonly float[] RetreatAngles = { 0f, 45f, -45f, 90f, -90f, 135f, -135f, 180f };
         private readonly int[] searchPasses = new int[4];
         private CoverPoint[] coverPoints = System.Array.Empty<CoverPoint>();
         private static readonly float[] SightRanges = { 18f, 25f, 40f, 23f };
@@ -233,27 +236,38 @@ namespace Blacksite.Gameplay
                 if (!retreating[i]) continue;
 
                 bool atRetreatPosition = IsAtRetreatCover(i);
-                if (!atRetreatPosition && retreatPositionReachedAt[i] < 0f &&
-                    Time.time - retreatStartedAt[i] >= 6f)
+                if (Vector3.Distance(agents[i].transform.position, lastRetreatPositions[i]) > .25f)
                 {
-                    // A bad or blocked graph route must not leave an enemy retreating
-                    // forever. Stop at a safe fallback point and let it recover there.
+                    lastRetreatPositions[i] = agents[i].transform.position;
+                    lastRetreatProgressAt[i] = Time.time;
+                }
+                if (!atRetreatPosition && retreatPositionReachedAt[i] < 0f &&
+                    Time.time - lastRetreatProgressAt[i] >= 3f &&
+                    Time.time >= nextRetreatRouteAt[i])
+                {
+                    // Retry with a farther, hidden destination if the selected cover
+                    // cannot be reached. Keep the agent moving away from the player.
+                    nextRetreatRouteAt[i] = Time.time + 6f;
                     var motor = agents[i].GetComponent<WaypointAgentMotor>();
-                    if (motor != null) motor.ClearDestination();
-                    fallbackRetreatPositions[i] = agents[i].transform.position;
-                    hasFallbackRetreatPosition[i] = true;
-                    retreatPositionReachedAt[i] = Time.time;
                     if (i == 1 && bastion != null) bastion.SetEmergencyRecovery(true);
-                    atRetreatPosition = true;
+                    if (motor == null || !TrySetFallbackRetreatDestination(i, motor))
+                    {
+                        if (motor != null) motor.ClearDestination();
+                        fallbackRetreatPositions[i] = agents[i].transform.position;
+                        hasFallbackRetreatPosition[i] = true;
+                        retreatPositionReachedAt[i] = Time.time;
+                        atRetreatPosition = true;
+                    }
                 }
                 if (atRetreatPosition && retreatPositionReachedAt[i] < 0f)
                     retreatPositionReachedAt[i] = Time.time;
                 else if (!atRetreatPosition)
                     retreatPositionReachedAt[i] = -1f;
                 bool hidden = atRetreatPosition &&
-                    (!playerVisible[i] || IsHiddenFromPlayer(i));
+                    IsHiddenFromPlayer(i);
+                bool outOfSight = atRetreatPosition && !CanSeePlayer(i, agents[i].transform);
                 bool recoveryPosition = hidden || atRetreatPosition &&
-                    Time.time - retreatPositionReachedAt[i] >= 3f;
+                    Time.time - retreatPositionReachedAt[i] >= 3f && outOfSight;
                 health.RecoverWhileHidden(recoveryPosition, deltaTime);
                 if (health.HitsRemaining >= health.MaxHits)
                 {
@@ -293,7 +307,9 @@ namespace Blacksite.Gameplay
         private void BeginRetreat(int index)
         {
             retreating[index] = true;
-            retreatStartedAt[index] = Time.time;
+            nextRetreatRouteAt[index] = Time.time + 6f;
+            lastRetreatProgressAt[index] = Time.time;
+            lastRetreatPositions[index] = agents[index].transform.position;
             retreatPositionReachedAt[index] = -1f;
             hasFallbackRetreatPosition[index] = false;
             playerVisible[index] = false;
@@ -337,16 +353,47 @@ namespace Blacksite.Gameplay
             Vector3 away = agents[index].transform.position - player.transform.position;
             away.y = 0f;
             if (away.sqrMagnitude < .01f) away = -agents[index].transform.forward;
-            fallbackRetreatPositions[index] = agents[index].transform.position + away.normalized * 7f;
-            hasFallbackRetreatPosition[index] = true;
-            if (!motor.SetDestination(fallbackRetreatPositions[index]))
+            if (!TrySetFallbackRetreatDestination(index, motor))
             {
-                // If no graph route exists, don't leave the agent permanently locked
-                // in retreat; let it recover in place, then resume the search.
                 motor.ClearDestination();
                 fallbackRetreatPositions[index] = agents[index].transform.position;
+                hasFallbackRetreatPosition[index] = true;
                 retreatPositionReachedAt[index] = Time.time;
             }
+        }
+
+        private bool TrySetFallbackRetreatDestination(int index, WaypointAgentMotor motor)
+        {
+            Vector3 away = agents[index].transform.position - player.transform.position;
+            away.y = 0f;
+            if (away.sqrMagnitude < .01f) away = -agents[index].transform.forward;
+            away.Normalize();
+            float[] retreatDistances = { SightRanges[index] + 3f, 18f, 13f };
+
+            // Try positions hidden behind level geometry first, then use a distant
+            // point outside the sight range if no hidden route is available.
+            for (int hiddenPass = 0; hiddenPass < 2; hiddenPass++)
+            {
+                for (int distanceIndex = 0; distanceIndex < retreatDistances.Length; distanceIndex++)
+                {
+                    float distance = retreatDistances[distanceIndex];
+                    for (int angleIndex = 0; angleIndex < RetreatAngles.Length; angleIndex++)
+                    {
+                        Vector3 direction = Quaternion.AngleAxis(RetreatAngles[angleIndex], Vector3.up) * away;
+                        Vector3 destination = player.transform.position + direction * distance;
+                        destination.y = agents[index].transform.position.y;
+                        bool hidden = IsPositionOccluded(index, destination + Vector3.up * 1.5f);
+                        if (hiddenPass == 0 && !hidden ||
+                            hiddenPass == 1 && (hidden || distance <= SightRanges[index])) continue;
+                        if (!motor.SetDestination(destination)) continue;
+
+                        fallbackRetreatPositions[index] = destination;
+                        hasFallbackRetreatPosition[index] = true;
+                        return true;
+                    }
+                }
+            }
+            return false;
         }
 
         private CoverPoint FindRetreatCover(int index, List<CoverPoint> attempted)
@@ -360,8 +407,10 @@ namespace Blacksite.Gameplay
                     (bastion != null && point == bastion.SelectedCover) || attempted.Contains(point)) continue;
                 Vector3 coverBody = point.transform.position + Vector3.up * 1.5f;
                 bool blocksSight = IsPositionOccluded(index, coverBody);
-                float distance = Vector3.Distance(agents[index].transform.position, point.transform.position);
-                float score = (blocksSight ? 100f : 0f) + point.StructuralSafety * 10f - distance;
+                float distanceFromPlayer = Vector3.Distance(player.transform.position, point.transform.position);
+                if (!blocksSight || distanceFromPlayer < 12f) continue;
+                float travelDistance = Vector3.Distance(agents[index].transform.position, point.transform.position);
+                float score = point.StructuralSafety * 10f + distanceFromPlayer * 4f - travelDistance;
                 if (score <= bestScore) continue;
                 bestScore = score;
                 best = point;
