@@ -194,7 +194,10 @@ namespace Blacksite.Gameplay
         private void OnNoiseEmitted(NoiseSignal noise)
         {
             if (!BlacksiteGameFlow.IsPlaying || agents == null) return;
-            float hearingRadius = 3f + noise.Loudness * 32f;
+            // Recovered agents may be several rooms away after retreating. Let
+            // gunshots carry far enough to reacquire the player, while footsteps
+            // still need to get reasonably close before they update the search.
+            float hearingRadius = 20f + noise.Loudness * 55f;
             float hearingRadiusSquared = hearingRadius * hearingRadius;
             for (int i = 0; i < Mathf.Min(agents.Length, 4); i++)
             {
@@ -505,7 +508,7 @@ namespace Blacksite.Gameplay
             int pass = searchPasses[index]++;
             float angle = (pass * 90f + index * 90f) * Mathf.Deg2Rad;
             int ring = pass == 0 ? 0 : (pass - 1) / 4 + 1;
-            float radius = Mathf.Min(ring * 3f + 2f, 14f);
+            float radius = Mathf.Min(ring * 4f + 2f, 28f);
             Vector3 offset = new Vector3(Mathf.Cos(angle), 0f, Mathf.Sin(angle)) * radius;
             motor.SetDestination(center + offset);
         }
