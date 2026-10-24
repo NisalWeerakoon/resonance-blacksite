@@ -51,6 +51,8 @@ namespace Blacksite.Agents.Movement
         public Vector3 Destination => destination;
         public IReadOnlyList<Vector3> CurrentRoute => route;
 
+        public void SetProceduralVisualMotion(bool enabled) => proceduralVisualMotion = enabled;
+
         private void Awake()
         {
             if (graphComponent != null)

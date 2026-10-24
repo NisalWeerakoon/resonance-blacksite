@@ -64,6 +64,26 @@ namespace Blacksite.Gameplay
             // Builder sets serialized references after AddComponent/OnEnable.
             if (bastion != null) bastion.AttackRequested -= OnBastionAttack;
             if (bastion != null) bastion.AttackRequested += OnBastionAttack;
+            EnsureEnemyMovementAnimations();
+        }
+
+        private void EnsureEnemyMovementAnimations()
+        {
+            if (agents == null) return;
+            for (int i = 0; i < Mathf.Min(agents.Length, 4); i++)
+            {
+                SubmissionAgentHealth agent = agents[i];
+                if (agent == null) continue;
+
+                WaypointAgentMotor motor = agent.GetComponent<WaypointAgentMotor>();
+                if (motor != null) motor.SetProceduralVisualMotion(true);
+
+                // ECHO and BASTION use the same humanoid bone names as RIFT.
+                // TRACE has no articulated skeleton, so it gets the motor's body
+                // bob and lean instead of a limb cycle.
+                if (i < 2 && agent.GetComponent<RiftProceduralAnimation>() == null)
+                    agent.gameObject.AddComponent<RiftProceduralAnimation>();
+            }
         }
 
         private void OnDisable()
@@ -239,27 +259,36 @@ namespace Blacksite.Gameplay
                 if (!retreating[i]) continue;
 
                 bool atRetreatPosition = IsAtRetreatCover(i);
+                WaypointAgentMotor motor = agents[i].GetComponent<WaypointAgentMotor>();
+                bool strandedInSight = hasFallbackRetreatPosition[i] &&
+                    CanSeePlayer(i, agents[i].transform) && motor != null &&
+                    (!motor.HasDestination || motor.IsBlocked || motor.HasArrived);
                 if (Vector3.Distance(agents[i].transform.position, lastRetreatPositions[i]) > .25f)
                 {
                     lastRetreatPositions[i] = agents[i].transform.position;
                     lastRetreatProgressAt[i] = Time.time;
                 }
-                if (!atRetreatPosition && retreatPositionReachedAt[i] < 0f &&
+                if ((!atRetreatPosition || strandedInSight) &&
                     Time.time - lastRetreatProgressAt[i] >= 3f &&
                     Time.time >= nextRetreatRouteAt[i])
                 {
                     // Retry with a farther, hidden destination if the selected cover
                     // cannot be reached. Keep the agent moving away from the player.
                     nextRetreatRouteAt[i] = Time.time + 6f;
-                    var motor = agents[i].GetComponent<WaypointAgentMotor>();
                     if (i == 1 && bastion != null) bastion.SetEmergencyRecovery(true);
                     if (motor == null || !TrySetFallbackRetreatDestination(i, motor))
                     {
                         if (motor != null) motor.ClearDestination();
                         fallbackRetreatPositions[i] = agents[i].transform.position;
                         hasFallbackRetreatPosition[i] = true;
-                        retreatPositionReachedAt[i] = Time.time;
+                        retreatPositionReachedAt[i] = -1f;
                         atRetreatPosition = true;
+                    }
+                    else
+                    {
+                        hasFallbackRetreatPosition[i] = true;
+                        atRetreatPosition = false;
+                        retreatPositionReachedAt[i] = -1f;
                     }
                 }
                 if (atRetreatPosition && retreatPositionReachedAt[i] < 0f)
@@ -301,7 +330,6 @@ namespace Blacksite.Gameplay
                         bastion.SetHealthFraction(health.HealthFraction);
                         bastion.Observe(new WorldObservation(lastKnownPositions[i], .35f, Time.timeAsDouble));
                     }
-                    var motor = agents[i].GetComponent<WaypointAgentMotor>();
                     if (i != 1 && motor != null && hasIntel[i]) motor.SetDestination(lastKnownPositions[i]);
                 }
             }
@@ -319,15 +347,23 @@ namespace Blacksite.Gameplay
             tactics[index] = "RETREATING TO COVER";
             if (index == 1)
             {
-                if (bastion != null) bastion.SetRecovering(true);
-                return; // BASTION's behavior tree selects its own protected cover.
+                if (bastion != null)
+                {
+                    // Let the director own this retreat route. Bastion's behavior
+                    // tree can otherwise keep requesting its old cover while the
+                    // shared motor is trying to reach a recovery position.
+                    bastion.SetRecovering(true);
+                    bastion.SetEmergencyRecovery(true);
+                }
             }
-
-            AgentBrainBase brain = agents[index].GetComponent<AgentBrainBase>();
-            if (brain != null)
+            else
             {
-                brainWasEnabled[index] = brain.enabled;
-                brain.enabled = false;
+                AgentBrainBase brain = agents[index].GetComponent<AgentBrainBase>();
+                if (brain != null)
+                {
+                    brainWasEnabled[index] = brain.enabled;
+                    brain.enabled = false;
+                }
             }
 
             WaypointAgentMotor motor = agents[index].GetComponent<WaypointAgentMotor>();
@@ -448,10 +484,10 @@ namespace Blacksite.Gameplay
             Vector3 coverPosition;
             if (hasFallbackRetreatPosition[index])
                 coverPosition = fallbackRetreatPositions[index];
-            else if (index == 1 && bastion != null && bastion.SelectedCover != null)
-                coverPosition = bastion.SelectedCover.transform.position;
             else if (retreatCovers[index] != null)
                 coverPosition = retreatCovers[index].transform.position;
+            else if (index == 1 && bastion != null && bastion.SelectedCover != null)
+                coverPosition = bastion.SelectedCover.transform.position;
             else return false;
             return Vector3.Distance(agents[index].transform.position, coverPosition) <= 1.4f;
         }
