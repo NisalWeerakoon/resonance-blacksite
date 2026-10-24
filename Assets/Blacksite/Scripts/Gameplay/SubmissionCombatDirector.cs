@@ -5,6 +5,7 @@ using Blacksite.Agents.Rift;
 using Blacksite.Agents.Trace;
 using Blacksite.Agents.Movement;
 using Blacksite.Shared;
+using System.Collections.Generic;
 using UnityEngine;
 
 namespace Blacksite.Gameplay
@@ -26,6 +27,10 @@ namespace Blacksite.Gameplay
         private readonly bool[] postRetreatSearch = new bool[4];
         private readonly bool[] brainWasEnabled = new bool[4];
         private readonly CoverPoint[] retreatCovers = new CoverPoint[4];
+        private readonly Vector3[] fallbackRetreatPositions = new Vector3[4];
+        private readonly bool[] hasFallbackRetreatPosition = new bool[4];
+        private readonly float[] retreatStartedAt = new float[4];
+        private readonly float[] retreatPositionReachedAt = { -1f, -1f, -1f, -1f };
         private readonly int[] searchPasses = new int[4];
         private CoverPoint[] coverPoints = System.Array.Empty<CoverPoint>();
         private static readonly float[] SightRanges = { 18f, 25f, 40f, 23f };
@@ -227,14 +232,39 @@ namespace Blacksite.Gameplay
                 if (!retreating[i] && health.ShouldRetreat) BeginRetreat(i);
                 if (!retreating[i]) continue;
 
-                bool hidden = IsAtRetreatCover(i) &&
+                bool atRetreatPosition = IsAtRetreatCover(i);
+                if (!atRetreatPosition && retreatPositionReachedAt[i] < 0f &&
+                    Time.time - retreatStartedAt[i] >= 6f)
+                {
+                    // A bad or blocked graph route must not leave an enemy retreating
+                    // forever. Stop at a safe fallback point and let it recover there.
+                    var motor = agents[i].GetComponent<WaypointAgentMotor>();
+                    if (motor != null) motor.ClearDestination();
+                    fallbackRetreatPositions[i] = agents[i].transform.position;
+                    hasFallbackRetreatPosition[i] = true;
+                    retreatPositionReachedAt[i] = Time.time;
+                    if (i == 1 && bastion != null) bastion.SetEmergencyRecovery(true);
+                    atRetreatPosition = true;
+                }
+                if (atRetreatPosition && retreatPositionReachedAt[i] < 0f)
+                    retreatPositionReachedAt[i] = Time.time;
+                else if (!atRetreatPosition)
+                    retreatPositionReachedAt[i] = -1f;
+                bool hidden = atRetreatPosition &&
                     (!playerVisible[i] || IsHiddenFromPlayer(i));
-                health.RecoverWhileHidden(hidden, deltaTime);
+                bool recoveryPosition = hidden || atRetreatPosition &&
+                    Time.time - retreatPositionReachedAt[i] >= 3f;
+                health.RecoverWhileHidden(recoveryPosition, deltaTime);
                 if (health.HitsRemaining >= health.MaxHits)
                 {
                     retreating[i] = false;
                     ReleaseRetreatCover(i);
-                    if (i == 1 && bastion != null) bastion.SetRecovering(false);
+                    if (i == 1 && bastion != null)
+                    {
+                        bastion.SetRecovering(false);
+                        bastion.SetEmergencyRecovery(false);
+                        bastion.RequestReplan();
+                    }
                     hasIntel[i] = true;
                     lastIntelTimes[i] = Time.time;
                     searchPasses[i] = 0;
@@ -263,6 +293,9 @@ namespace Blacksite.Gameplay
         private void BeginRetreat(int index)
         {
             retreating[index] = true;
+            retreatStartedAt[index] = Time.time;
+            retreatPositionReachedAt[index] = -1f;
+            hasFallbackRetreatPosition[index] = false;
             playerVisible[index] = false;
             tactics[index] = "RETREATING TO COVER";
             if (index == 1)
@@ -279,23 +312,44 @@ namespace Blacksite.Gameplay
             }
 
             WaypointAgentMotor motor = agents[index].GetComponent<WaypointAgentMotor>();
-            if (motor == null) return;
-            CoverPoint cover = FindRetreatCover(index);
-            if (cover != null)
+            if (motor == null)
             {
-                retreatCovers[index] = cover;
-                cover.Occupied = true;
-                motor.SetDestination(cover.transform.position);
+                fallbackRetreatPositions[index] = agents[index].transform.position;
+                hasFallbackRetreatPosition[index] = true;
                 return;
+            }
+
+            var attemptedCovers = new List<CoverPoint>();
+            while (true)
+            {
+                CoverPoint cover = FindRetreatCover(index, attemptedCovers);
+                if (cover == null) break;
+                attemptedCovers.Add(cover);
+                cover.Occupied = true;
+                if (motor.SetDestination(cover.transform.position))
+                {
+                    retreatCovers[index] = cover;
+                    return;
+                }
+                cover.Occupied = false;
             }
 
             Vector3 away = agents[index].transform.position - player.transform.position;
             away.y = 0f;
             if (away.sqrMagnitude < .01f) away = -agents[index].transform.forward;
-            motor.SetDestination(agents[index].transform.position + away.normalized * 7f);
+            fallbackRetreatPositions[index] = agents[index].transform.position + away.normalized * 7f;
+            hasFallbackRetreatPosition[index] = true;
+            if (!motor.SetDestination(fallbackRetreatPositions[index]))
+            {
+                // If no graph route exists, don't leave the agent permanently locked
+                // in retreat; let it recover in place, then resume the search.
+                motor.ClearDestination();
+                fallbackRetreatPositions[index] = agents[index].transform.position;
+                retreatPositionReachedAt[index] = Time.time;
+            }
         }
 
-        private CoverPoint FindRetreatCover(int index)
+        private CoverPoint FindRetreatCover(int index, List<CoverPoint> attempted)
         {
             CoverPoint best = null;
             float bestScore = float.NegativeInfinity;
@@ -303,8 +357,8 @@ namespace Blacksite.Gameplay
             {
                 CoverPoint point = coverPoints[i];
                 if (point == null || point.Occupied ||
-                    (retreating[1] && bastion != null && point == bastion.SelectedCover)) continue;
-                Vector3 coverBody = point.transform.position + Vector3.up;
+                    (bastion != null && point == bastion.SelectedCover) || attempted.Contains(point)) continue;
+                Vector3 coverBody = point.transform.position + Vector3.up * 1.5f;
                 bool blocksSight = IsPositionOccluded(index, coverBody);
                 float distance = Vector3.Distance(agents[index].transform.position, point.transform.position);
                 float score = (blocksSight ? 100f : 0f) + point.StructuralSafety * 10f - distance;
@@ -340,7 +394,9 @@ namespace Blacksite.Gameplay
         private bool IsAtRetreatCover(int index)
         {
             Vector3 coverPosition;
-            if (index == 1 && bastion != null && bastion.SelectedCover != null)
+            if (hasFallbackRetreatPosition[index])
+                coverPosition = fallbackRetreatPositions[index];
+            else if (index == 1 && bastion != null && bastion.SelectedCover != null)
                 coverPosition = bastion.SelectedCover.transform.position;
             else if (retreatCovers[index] != null)
                 coverPosition = retreatCovers[index].transform.position;
@@ -353,6 +409,8 @@ namespace Blacksite.Gameplay
             if (retreatCovers[index] != null)
                 retreatCovers[index].Occupied = false;
             retreatCovers[index] = null;
+            hasFallbackRetreatPosition[index] = false;
+            retreatPositionReachedAt[index] = -1f;
         }
 
         private void RememberPlayerPosition(int index, Vector3 position)
