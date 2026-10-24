@@ -86,6 +86,8 @@ namespace Blacksite.Agents.Bastion
             routeRequested = false;
         }
 
+        public void SetHealthFraction(float fraction) => healthFraction = Mathf.Clamp01(fraction);
+
         private void OnPortalChanged(IPortalState portal)
         {
             if (portal == null || string.IsNullOrEmpty(portal.PortalId)) return;
@@ -113,10 +115,13 @@ namespace Blacksite.Agents.Bastion
             return new SelectorNode(
                 new SequenceNode(new ConditionNode(() => healthFraction <= 0f),
                     new ActionNode(() => Status("Dead", NodeStatus.Running))),
+                new SequenceNode(new ConditionNode(() => healthFraction < .999f),
+                    new SelectorNode(
+                        new SequenceNode(new ActionNode(SelectCover), new ActionNode(MoveToCover),
+                            new ActionNode(() => Status("RecoveringInCover", NodeStatus.Running))),
+                        new ActionNode(() => Status("LowHealthNoCover", NodeStatus.Running)))),
                 new SequenceNode(new ConditionNode(HasThreat),
                     new SelectorNode(
-                        new SequenceNode(new ConditionNode(() => healthFraction < .2f),
-                            new ActionNode(() => Status("LowHealthGuard", NodeStatus.Running))),
                         new SequenceNode(new ConditionNode(() => visibleNow),
                             new SelectorNode(
                                 new SequenceNode(new ConditionNode(GoodCurrentCover),
