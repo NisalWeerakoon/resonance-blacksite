@@ -34,6 +34,7 @@ namespace Blacksite.Agents.Bastion
         private float nextTick;
         private bool visibleNow;
         private bool wasVisible;
+        private bool searchMode;
         private bool routeRequested;
         private string currentNode = "Uninitialized";
 
@@ -87,6 +88,7 @@ namespace Blacksite.Agents.Bastion
         }
 
         public void SetHealthFraction(float fraction) => healthFraction = Mathf.Clamp01(fraction);
+        public void SetSearchMode(bool searching) => searchMode = searching;
 
         private void OnPortalChanged(IPortalState portal)
         {
@@ -106,7 +108,17 @@ namespace Blacksite.Agents.Bastion
             if (visibleNow != wasVisible) routeRequested = false;
             wasVisible = visibleNow;
             if (visibleNow)
+            {
+                searchMode = false;
                 Observe(new WorldObservation(playerTarget.position, 1f, Time.timeAsDouble));
+            }
+            else if (LatestObservation.HasValue &&
+                     Time.timeAsDouble - LatestObservation.Value.Time <= memorySeconds)
+            {
+                // Sweep the full surroundings while following fresh last-seen intel;
+                // otherwise a retreat turn can leave the player behind its cone.
+                searchMode = true;
+            }
             tree.Tick();
         }
 
@@ -115,7 +127,7 @@ namespace Blacksite.Agents.Bastion
             return new SelectorNode(
                 new SequenceNode(new ConditionNode(() => healthFraction <= 0f),
                     new ActionNode(() => Status("Dead", NodeStatus.Running))),
-                new SequenceNode(new ConditionNode(() => healthFraction < .999f),
+                new SequenceNode(new ConditionNode(() => healthFraction <= .375f),
                     new SelectorNode(
                         new SequenceNode(new ActionNode(SelectCover), new ActionNode(MoveToCover),
                             new ActionNode(() => Status("RecoveringInCover", NodeStatus.Running))),
@@ -152,7 +164,7 @@ namespace Blacksite.Agents.Bastion
             Vector3 to = playerTarget.position + Vector3.up;
             Vector3 delta = to - from;
             if (delta.magnitude > sightRange ||
-                Vector3.Angle(eye.forward, delta) > fieldOfView * .5f) return false;
+                !searchMode && Vector3.Angle(eye.forward, delta) > fieldOfView * .5f) return false;
             return !Physics.Linecast(from, to, out RaycastHit hit, visibilityMask,
                 QueryTriggerInteraction.Ignore) || hit.transform.IsChildOf(playerTarget);
         }

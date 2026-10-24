@@ -78,6 +78,7 @@ namespace Blacksite.Gameplay
                     lastIntelTimes[i] = Time.time;
                     tactics[i] = "SEARCHING ENTRY";
                     postRetreatSearch[i] = true;
+                    if (i == 1 && bastion != null) bastion.SetSearchMode(true);
                     if (i == 1 && bastion != null)
                         bastion.Observe(new WorldObservation(player.transform.position, .35f, Time.timeAsDouble));
                     else
@@ -133,6 +134,7 @@ namespace Blacksite.Gameplay
                     if (playerVisible[i])
                     {
                         postRetreatSearch[i] = false;
+                        if (i == 1 && bastion != null) bastion.SetSearchMode(false);
                         if (i != 1)
                         {
                             AgentBrainBase brain = agents[i].GetComponent<AgentBrainBase>();
@@ -236,6 +238,7 @@ namespace Blacksite.Gameplay
                     lastIntelTimes[i] = Time.time;
                     searchPasses[i] = 0;
                     postRetreatSearch[i] = true;
+                    if (i == 1 && bastion != null) bastion.SetSearchMode(true);
                     if (i != 1)
                     {
                         AgentBrainBase brain = agents[i].GetComponent<AgentBrainBase>();
@@ -366,8 +369,9 @@ namespace Blacksite.Gameplay
             Vector3 target = playerCollider != null ? playerCollider.bounds.center : player.transform.position + Vector3.up;
             Vector3 delta = target - origin;
             float distance = delta.magnitude;
+            float fieldOfView = postRetreatSearch[index] ? 360f : SightFieldOfView;
             if (distance > SightRanges[index] || distance < .01f ||
-                Vector3.Angle(observer.forward, delta) > SightFieldOfView * .5f) return false;
+                Vector3.Angle(observer.forward, delta) > fieldOfView * .5f) return false;
 
             float closest = float.PositiveInfinity;
             Transform closestTransform = null;
