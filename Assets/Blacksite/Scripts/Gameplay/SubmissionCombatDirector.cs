@@ -452,7 +452,7 @@ namespace Blacksite.Gameplay
             {
                 bool active = agents[i] != null && agents[i].gameObject.activeInHierarchy;
                 string distance = active ?
-                    $"{Vector3.Distance(player.transform.position, agents[i].transform.position):0}m • {agents[i].HitsRemaining}/3 armor" :
+                    $"{Vector3.Distance(player.transform.position, agents[i].transform.position):0}m • {agents[i].HitsRemaining}/{agents[i].MaxHits} armor" :
                     "DISABLED";
                 GUI.Label(new Rect(left + 12f, 36f + i * 36f, width - 20f, 20f),
                     $"{names[i]}  [{rooms[i]}]  {distance}");

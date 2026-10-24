@@ -4,7 +4,7 @@ namespace Blacksite.Gameplay
 {
     public sealed class SubmissionAgentHealth : MonoBehaviour
     {
-        [SerializeField, Min(1)] private int hitsToDisable = 3;
+        [SerializeField, Min(1)] private int hitsToDisable = 8;
         [SerializeField, Min(0f)] private float recoveryDelay = 4f;
         [SerializeField, Min(.1f)] private float secondsPerRecoveredHit = 2.5f;
         private int hits;
@@ -12,8 +12,9 @@ namespace Blacksite.Gameplay
         private float lastHitAt = -100f;
         private float recoveryProgress;
         public int HitsRemaining => Mathf.Max(0, hitsToDisable - hits);
+        public int MaxHits => hitsToDisable;
         public float HealthFraction => hitsToDisable <= 0 ? 0f : HitsRemaining / (float)hitsToDisable;
-        public bool ShouldRetreat => HitsRemaining > 0 && HitsRemaining < hitsToDisable;
+        public bool ShouldRetreat => HitsRemaining > 0 && HitsRemaining <= Mathf.CeilToInt(hitsToDisable * .375f);
 
         public void TakeHit()
         {
