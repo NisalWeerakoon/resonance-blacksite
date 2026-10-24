@@ -35,6 +35,7 @@ namespace Blacksite.Agents.Bastion
         private bool visibleNow;
         private bool wasVisible;
         private bool searchMode;
+        private bool recovering;
         private bool routeRequested;
         private string currentNode = "Uninitialized";
 
@@ -89,6 +90,7 @@ namespace Blacksite.Agents.Bastion
 
         public void SetHealthFraction(float fraction) => healthFraction = Mathf.Clamp01(fraction);
         public void SetSearchMode(bool searching) => searchMode = searching;
+        public void SetRecovering(bool value) => recovering = value;
 
         private void OnPortalChanged(IPortalState portal)
         {
@@ -127,7 +129,7 @@ namespace Blacksite.Agents.Bastion
             return new SelectorNode(
                 new SequenceNode(new ConditionNode(() => healthFraction <= 0f),
                     new ActionNode(() => Status("Dead", NodeStatus.Running))),
-                new SequenceNode(new ConditionNode(() => healthFraction <= .375f),
+                new SequenceNode(new ConditionNode(() => recovering || healthFraction <= .375f),
                     new SelectorNode(
                         new SequenceNode(new ActionNode(SelectCover), new ActionNode(MoveToCover),
                             new ActionNode(() => Status("RecoveringInCover", NodeStatus.Running))),

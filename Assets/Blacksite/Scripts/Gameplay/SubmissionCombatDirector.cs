@@ -230,10 +230,11 @@ namespace Blacksite.Gameplay
                 bool hidden = IsAtRetreatCover(i) &&
                     (!playerVisible[i] || IsHiddenFromPlayer(i));
                 health.RecoverWhileHidden(hidden, deltaTime);
-                if (!health.ShouldRetreat)
+                if (health.HitsRemaining >= health.MaxHits)
                 {
                     retreating[i] = false;
                     ReleaseRetreatCover(i);
+                    if (i == 1 && bastion != null) bastion.SetRecovering(false);
                     hasIntel[i] = true;
                     lastIntelTimes[i] = Time.time;
                     searchPasses[i] = 0;
@@ -264,7 +265,11 @@ namespace Blacksite.Gameplay
             retreating[index] = true;
             playerVisible[index] = false;
             tactics[index] = "RETREATING TO COVER";
-            if (index == 1) return; // BASTION's behavior tree selects its own protected cover.
+            if (index == 1)
+            {
+                if (bastion != null) bastion.SetRecovering(true);
+                return; // BASTION's behavior tree selects its own protected cover.
+            }
 
             AgentBrainBase brain = agents[index].GetComponent<AgentBrainBase>();
             if (brain != null)
