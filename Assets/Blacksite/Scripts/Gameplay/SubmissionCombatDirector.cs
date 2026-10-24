@@ -22,7 +22,11 @@ namespace Blacksite.Gameplay
         private readonly float[] lastIntelTimes = new float[4];
         private readonly bool[] hasIntel = new bool[4];
         private readonly bool[] playerVisible = new bool[4];
+        private readonly bool[] retreating = new bool[4];
+        private readonly bool[] brainWasEnabled = new bool[4];
+        private readonly CoverPoint[] retreatCovers = new CoverPoint[4];
         private readonly int[] searchPasses = new int[4];
+        private CoverPoint[] coverPoints = System.Array.Empty<CoverPoint>();
         private static readonly float[] SightRanges = { 18f, 25f, 20f, 23f };
         private const float SightFieldOfView = 150f;
         private const float IntelMemorySeconds = 14f;
@@ -38,6 +42,7 @@ namespace Blacksite.Gameplay
             player = target;
             agents = threats;
             bastion = bastionBrain;
+            coverPoints = FindObjectsByType<CoverPoint>(FindObjectsSortMode.None);
         }
 
         private void OnEnable()
@@ -80,6 +85,7 @@ namespace Blacksite.Gameplay
                         openingMotor.SetDestination(player.transform.position);
                 }
             }
+            UpdateRetreats(Time.deltaTime);
             if (Time.time >= nextTactic)
             {
                 playerVelocity = lastTacticAt > 0f ?
@@ -105,6 +111,11 @@ namespace Blacksite.Gameplay
                 if (agents[i] == null || !agents[i].gameObject.activeInHierarchy) continue;
                 playerVisible[i] = CanSeePlayer(i, agents[i].transform);
                 if (playerVisible[i]) RememberPlayerPosition(i, player.transform.position);
+                if (retreating[i])
+                {
+                    tactics[i] = IsAtRetreatCover(i) ? "RECOVERING IN COVER" : "RETREATING TO COVER";
+                    continue;
+                }
                 bool hasRecentIntel = hasIntel[i] && Time.time - lastIntelTimes[i] <= IntelMemorySeconds;
                 if (!hasRecentIntel)
                 {
@@ -174,10 +185,137 @@ namespace Blacksite.Gameplay
                 RememberPlayerPosition(i, noise.Position);
                 if (i == 1 && bastion != null)
                     bastion.Observe(new WorldObservation(noise.Position, noise.Loudness, Time.timeAsDouble));
+                if (retreating[i]) continue;
                 if ((i == 2 || i == 3) && agents[i].TryGetComponent(out WaypointAgentMotor motor))
                     motor.SetDestination(noise.Position);
                 if (i != 0) tactics[i] = "INVESTIGATING SOUND";
             }
+        }
+
+        private void UpdateRetreats(float deltaTime)
+        {
+            for (int i = 0; i < 4; i++)
+            {
+                SubmissionAgentHealth health = agents[i];
+                if (health == null) continue;
+                if (!health.gameObject.activeInHierarchy)
+                {
+                    ReleaseRetreatCover(i);
+                    retreating[i] = false;
+                    continue;
+                }
+
+                if (i == 1 && bastion != null) bastion.SetHealthFraction(health.HealthFraction);
+                if (!retreating[i] && health.ShouldRetreat) BeginRetreat(i);
+                if (!retreating[i]) continue;
+
+                bool hidden = IsAtRetreatCover(i) && IsHiddenFromPlayer(i);
+                health.RecoverWhileHidden(hidden, deltaTime);
+                if (!health.ShouldRetreat)
+                {
+                    retreating[i] = false;
+                    ReleaseRetreatCover(i);
+                    if (i != 1)
+                    {
+                        AgentBrainBase brain = agents[i].GetComponent<AgentBrainBase>();
+                        if (brain != null && brainWasEnabled[i]) brain.enabled = true;
+                    }
+                    if (i == 1 && bastion != null) bastion.SetHealthFraction(health.HealthFraction);
+                    var motor = agents[i].GetComponent<WaypointAgentMotor>();
+                    if (i != 1 && motor != null && hasIntel[i]) motor.SetDestination(lastKnownPositions[i]);
+                }
+            }
+        }
+
+        private void BeginRetreat(int index)
+        {
+            retreating[index] = true;
+            playerVisible[index] = false;
+            tactics[index] = "RETREATING TO COVER";
+            if (index == 1) return; // BASTION's behavior tree selects its own protected cover.
+
+            AgentBrainBase brain = agents[index].GetComponent<AgentBrainBase>();
+            if (brain != null)
+            {
+                brainWasEnabled[index] = brain.enabled;
+                brain.enabled = false;
+            }
+
+            WaypointAgentMotor motor = agents[index].GetComponent<WaypointAgentMotor>();
+            if (motor == null) return;
+            CoverPoint cover = FindRetreatCover(index);
+            if (cover != null)
+            {
+                retreatCovers[index] = cover;
+                cover.Occupied = true;
+                motor.SetDestination(cover.transform.position);
+                return;
+            }
+
+            Vector3 away = agents[index].transform.position - player.transform.position;
+            away.y = 0f;
+            if (away.sqrMagnitude < .01f) away = -agents[index].transform.forward;
+            motor.SetDestination(agents[index].transform.position + away.normalized * 7f);
+        }
+
+        private CoverPoint FindRetreatCover(int index)
+        {
+            CoverPoint best = null;
+            float bestScore = float.NegativeInfinity;
+            for (int i = 0; i < coverPoints.Length; i++)
+            {
+                CoverPoint point = coverPoints[i];
+                if (point == null || point.Occupied ||
+                    (retreating[1] && bastion != null && point == bastion.SelectedCover)) continue;
+                Vector3 coverBody = point.transform.position + Vector3.up;
+                bool blocksSight = IsPositionOccluded(index, coverBody);
+                float distance = Vector3.Distance(agents[index].transform.position, point.transform.position);
+                float score = (blocksSight ? 100f : 0f) + point.StructuralSafety * 10f - distance;
+                if (score <= bestScore) continue;
+                bestScore = score;
+                best = point;
+            }
+            return best;
+        }
+
+        private bool IsHiddenFromPlayer(int index)
+        {
+            return IsPositionOccluded(index, agents[index].transform.position + Vector3.up * 1.5f);
+        }
+
+        private bool IsPositionOccluded(int index, Vector3 target)
+        {
+            Vector3 origin = player.transform.position + Vector3.up;
+            Vector3 delta = target - origin;
+            float distance = delta.magnitude;
+            if (distance < .05f) return false;
+            foreach (RaycastHit hit in Physics.RaycastAll(origin, delta / distance, distance,
+                         ~0, QueryTriggerInteraction.Ignore))
+            {
+                if (hit.transform.IsChildOf(player.transform) ||
+                    hit.transform == agents[index].transform ||
+                    hit.transform.IsChildOf(agents[index].transform)) continue;
+                return true;
+            }
+            return false;
+        }
+
+        private bool IsAtRetreatCover(int index)
+        {
+            Vector3 coverPosition;
+            if (index == 1 && bastion != null && bastion.SelectedCover != null)
+                coverPosition = bastion.SelectedCover.transform.position;
+            else if (retreatCovers[index] != null)
+                coverPosition = retreatCovers[index].transform.position;
+            else return false;
+            return Vector3.Distance(agents[index].transform.position, coverPosition) <= 1.4f;
+        }
+
+        private void ReleaseRetreatCover(int index)
+        {
+            if (retreatCovers[index] != null)
+                retreatCovers[index].Occupied = false;
+            retreatCovers[index] = null;
         }
 
         private void RememberPlayerPosition(int index, Vector3 position)
@@ -230,7 +368,7 @@ namespace Blacksite.Gameplay
             Color color)
         {
             if (agents[index] == null || !agents[index].gameObject.activeInHierarchy ||
-                !playerVisible[index] || Time.time < nextAttack[index]) return;
+                retreating[index] || !playerVisible[index] || Time.time < nextAttack[index]) return;
             Vector3 origin = agents[index].transform.position + Vector3.up * 1.45f;
             Vector3 destination = player.transform.position + Vector3.up;
             float distance = Vector3.Distance(origin, destination);
@@ -244,7 +382,8 @@ namespace Blacksite.Gameplay
         private void OnBastionAttack(Transform target)
         {
             if (player == null || player.IsDead || bastion == null ||
-                !bastion.gameObject.activeInHierarchy || !playerVisible[1] || Time.time < nextAttack[1]) return;
+                !bastion.gameObject.activeInHierarchy || retreating[1] || !playerVisible[1] ||
+                Time.time < nextAttack[1]) return;
             Vector3 origin = bastion.transform.position + Vector3.up * 1.7f;
             Vector3 destination = player.transform.position + Vector3.up;
             if (Vector3.Distance(origin, destination) > 24f ||
