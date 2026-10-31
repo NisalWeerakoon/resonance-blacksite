@@ -58,6 +58,7 @@ namespace Blacksite.Editor
             var world = runtime.AddComponent<EchoWorldContext>();
             runtime.AddComponent<EchoWorldSignalBridge>();
             var echoMotor = EnsureMotor(echoRoot, graph);
+            EnsureRiftStyleAnimation(echoRoot);
             EnsureNavigationCollider(echoRoot, .35f, 1.8f);
             var echo = echoRoot.gameObject.AddComponent<EchoBrain>();
             SetReference(echo, "world", world);
@@ -68,6 +69,7 @@ namespace Blacksite.Editor
             var planner = graph.gameObject.AddComponent<ExistingGraphPathPlanner>();
             planner.ConfigureSandbox(graph);
             var bastionMotor = EnsureMotor(bastionRoot, graph);
+            EnsureRiftStyleAnimation(bastionRoot);
             EnsureNavigationCollider(bastionRoot, .55f, 2f);
             var bastion = bastionRoot.gameObject.AddComponent<BastionBrain>();
             var eye = new GameObject("BASTION_Eye");
@@ -272,7 +274,16 @@ namespace Blacksite.Editor
             var motor = root.GetComponent<WaypointAgentMotor>();
             if (motor == null) motor = root.gameObject.AddComponent<WaypointAgentMotor>();
             SetReference(motor, "graphComponent", graph);
+            var serializedMotor = new SerializedObject(motor);
+            serializedMotor.FindProperty("proceduralVisualMotion").boolValue = true;
+            serializedMotor.ApplyModifiedPropertiesWithoutUndo();
             return motor;
+        }
+
+        private static void EnsureRiftStyleAnimation(Transform root)
+        {
+            if (root.GetComponent<RiftProceduralAnimation>() == null)
+                root.gameObject.AddComponent<RiftProceduralAnimation>();
         }
 
         private static void EnsureNavigationCollider(Transform root, float radius, float height)

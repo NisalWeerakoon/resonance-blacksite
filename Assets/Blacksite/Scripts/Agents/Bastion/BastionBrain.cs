@@ -34,6 +34,9 @@ namespace Blacksite.Agents.Bastion
         private float nextTick;
         private bool visibleNow;
         private bool wasVisible;
+        private bool searchMode;
+        private bool recovering;
+        private bool emergencyRecovery;
         private bool routeRequested;
         private string currentNode = "Uninitialized";
 
@@ -86,6 +89,12 @@ namespace Blacksite.Agents.Bastion
             routeRequested = false;
         }
 
+        public void SetHealthFraction(float fraction) => healthFraction = Mathf.Clamp01(fraction);
+        public void SetSearchMode(bool searching) => searchMode = searching;
+        public void SetRecovering(bool value) => recovering = value;
+        public void SetEmergencyRecovery(bool value) => emergencyRecovery = value;
+        public void RequestReplan() => routeRequested = false;
+
         private void OnPortalChanged(IPortalState portal)
         {
             if (portal == null || string.IsNullOrEmpty(portal.PortalId)) return;
@@ -104,7 +113,17 @@ namespace Blacksite.Agents.Bastion
             if (visibleNow != wasVisible) routeRequested = false;
             wasVisible = visibleNow;
             if (visibleNow)
+            {
+                searchMode = false;
                 Observe(new WorldObservation(playerTarget.position, 1f, Time.timeAsDouble));
+            }
+            else if (LatestObservation.HasValue &&
+                     Time.timeAsDouble - LatestObservation.Value.Time <= memorySeconds)
+            {
+                // Sweep the full surroundings while following fresh last-seen intel;
+                // otherwise a retreat turn can leave the player behind its cone.
+                searchMode = true;
+            }
             tree.Tick();
         }
 
@@ -113,10 +132,15 @@ namespace Blacksite.Agents.Bastion
             return new SelectorNode(
                 new SequenceNode(new ConditionNode(() => healthFraction <= 0f),
                     new ActionNode(() => Status("Dead", NodeStatus.Running))),
+                new SequenceNode(new ConditionNode(() => recovering || healthFraction <= .375f),
+                    new SelectorNode(
+                        new SequenceNode(new ConditionNode(() => !emergencyRecovery),
+                            new ActionNode(SelectCover), new ActionNode(MoveToCover),
+                            new ActionNode(() => Status("RecoveringInCover", NodeStatus.Running))),
+                        new ActionNode(() => Status(recovering ? "RecoveringAtFallback" : "LowHealthNoCover",
+                            NodeStatus.Running)))),
                 new SequenceNode(new ConditionNode(HasThreat),
                     new SelectorNode(
-                        new SequenceNode(new ConditionNode(() => healthFraction < .2f),
-                            new ActionNode(() => Status("LowHealthGuard", NodeStatus.Running))),
                         new SequenceNode(new ConditionNode(() => visibleNow),
                             new SelectorNode(
                                 new SequenceNode(new ConditionNode(GoodCurrentCover),
@@ -147,7 +171,7 @@ namespace Blacksite.Agents.Bastion
             Vector3 to = playerTarget.position + Vector3.up;
             Vector3 delta = to - from;
             if (delta.magnitude > sightRange ||
-                Vector3.Angle(eye.forward, delta) > fieldOfView * .5f) return false;
+                !searchMode && Vector3.Angle(eye.forward, delta) > fieldOfView * .5f) return false;
             return !Physics.Linecast(from, to, out RaycastHit hit, visibilityMask,
                 QueryTriggerInteraction.Ignore) || hit.transform.IsChildOf(playerTarget);
         }
