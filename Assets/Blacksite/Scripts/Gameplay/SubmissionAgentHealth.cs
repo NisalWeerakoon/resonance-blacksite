@@ -14,10 +14,18 @@ namespace Blacksite.Gameplay
         private Transform visualRoot;
         private Vector3 visualRestPosition;
         private Quaternion visualRestRotation;
+        private Renderer[] visualRenderers;
+        private MaterialPropertyBlock[] restPropertyBlocks;
+        private MaterialPropertyBlock[] flashPropertyBlocks;
         private float hitReactionUntil;
+        private float visualFlashUntil;
         private float hitReactionSide;
         private Vector3 hitReactionDirection;
-        private const float HitReactionDuration = .34f;
+        private bool hitFlashApplied;
+        private const float HitReactionDuration = .38f;
+        private const float HitFlashDuration = .11f;
+        private static readonly int BaseColorId = Shader.PropertyToID("_BaseColor");
+        private static readonly int LegacyColorId = Shader.PropertyToID("_Color");
         public int HitsRemaining => Mathf.Max(0, hitsToDisable - hits);
         public int MaxHits => hitsToDisable;
         public float HealthFraction => hitsToDisable <= 0 ? 0f : HitsRemaining / (float)hitsToDisable;
@@ -25,25 +33,40 @@ namespace Blacksite.Gameplay
 
         private void Awake()
         {
-            Renderer bodyRenderer = GetComponentInChildren<Renderer>(true);
+            visualRenderers = GetComponentsInChildren<Renderer>(true);
+            Renderer bodyRenderer = visualRenderers.Length > 0 ? visualRenderers[0] : null;
             if (bodyRenderer == null) return;
             visualRoot = bodyRenderer.transform;
             while (visualRoot.parent != null && visualRoot.parent != transform)
                 visualRoot = visualRoot.parent;
             visualRestPosition = visualRoot.localPosition;
             visualRestRotation = visualRoot.localRotation;
+            restPropertyBlocks = new MaterialPropertyBlock[visualRenderers.Length];
+            flashPropertyBlocks = new MaterialPropertyBlock[visualRenderers.Length];
+            for (int i = 0; i < visualRenderers.Length; i++)
+            {
+                restPropertyBlocks[i] = new MaterialPropertyBlock();
+                flashPropertyBlocks[i] = new MaterialPropertyBlock();
+                visualRenderers[i].GetPropertyBlock(restPropertyBlocks[i]);
+                visualRenderers[i].GetPropertyBlock(flashPropertyBlocks[i]);
+                flashPropertyBlocks[i].SetColor(BaseColorId, new Color(1.2f, 2.1f, 2.5f));
+                flashPropertyBlocks[i].SetColor(LegacyColorId, new Color(1.2f, 2.1f, 2.5f));
+            }
         }
 
         private void Update()
         {
+            if (hitFlashApplied && Time.time >= visualFlashUntil)
+                SetHitFlash(false);
             if (visualRoot == null) return;
-            float progress = Mathf.Clamp01(1f - (hitReactionUntil - Time.time) / HitReactionDuration);
+            float elapsed = HitReactionDuration - (hitReactionUntil - Time.time);
+            float progress = Mathf.Clamp01(elapsed / HitReactionDuration);
             float kick = hitReactionUntil > Time.time
-                ? Mathf.Sin((1f - progress) * Mathf.PI * .5f) : 0f;
-            Vector3 offset = hitReactionDirection * (.075f * kick) + Vector3.up * (.035f * kick);
+                ? Mathf.Pow(1f - progress, 2f) * (1f + .2f * Mathf.Sin(progress * Mathf.PI * 3f)) : 0f;
+            Vector3 offset = hitReactionDirection * (.11f * kick) + Vector3.up * (.025f * kick);
             visualRoot.localPosition = visualRestPosition + offset;
             visualRoot.localRotation = visualRestRotation * Quaternion.Euler(
-                -8f * kick, 0f, -hitReactionSide * 11f * kick);
+                -3f * kick, hitReactionSide * 4f * kick, -hitReactionSide * 17f * kick);
         }
 
         public void TakeHit()
@@ -58,15 +81,28 @@ namespace Blacksite.Gameplay
             recoveryProgress = 0f;
             hitFlashUntil = Time.time + .5f;
             Vector3 localShotDirection = transform.InverseTransformDirection(shotDirection.normalized);
+            Vector3 localImpactPoint = transform.InverseTransformPoint(impactPoint);
             hitReactionDirection = -new Vector3(localShotDirection.x, 0f, localShotDirection.z).normalized;
             if (hitReactionDirection.sqrMagnitude < .01f) hitReactionDirection = Vector3.back;
             hitReactionSide = Mathf.Abs(localShotDirection.x) > .1f
-                ? Mathf.Sign(localShotDirection.x) : (impactPoint.x >= transform.position.x ? 1f : -1f);
+                ? Mathf.Sign(localShotDirection.x) : Mathf.Abs(localImpactPoint.x) > .08f
+                    ? -Mathf.Sign(localImpactPoint.x) : (Random.value < .5f ? -1f : 1f);
             hitReactionUntil = Time.time + HitReactionDuration;
+            visualFlashUntil = Time.time + HitFlashDuration;
+            SetHitFlash(true);
             Debug.Log($"BLACKSITE_HIT agent={name} remaining={HitsRemaining}");
             if (hits < hitsToDisable) return;
             Debug.Log($"BLACKSITE {name} disabled after {hits} pulse hits", this);
             gameObject.SetActive(false);
+        }
+
+        private void SetHitFlash(bool enabled)
+        {
+            if (visualRenderers == null || restPropertyBlocks == null || flashPropertyBlocks == null) return;
+            for (int i = 0; i < visualRenderers.Length; i++)
+                if (visualRenderers[i] != null)
+                    visualRenderers[i].SetPropertyBlock(enabled ? flashPropertyBlocks[i] : restPropertyBlocks[i]);
+            hitFlashApplied = enabled;
         }
 
         public void RecoverWhileHidden(bool isHidden, float deltaTime)
