@@ -313,6 +313,11 @@ namespace Blacksite.Gameplay
                     }
                     hasIntel[i] = true;
                     lastIntelTimes[i] = Time.time;
+                    // The player may have moved while the agent was recovering.
+                    // Reacquire the current position so the post-retreat search
+                    // brings the agent back into the encounter instead of sending
+                    // it to an old location and leaving it stranded there.
+                    lastKnownPositions[i] = player.transform.position;
                     searchPasses[i] = 0;
                     postRetreatSearch[i] = true;
                     if (i == 1 && bastion != null) bastion.SetSearchMode(true);
