@@ -27,6 +27,10 @@ namespace Blacksite.Gameplay
         private Material[] muzzleMaterials;
         private float muzzleFlashRemaining;
         private const float MuzzleFlashDuration = .095f;
+        private Transform energyCell;
+        private Vector3 energyCellRestPosition;
+        private Vector3 energyCellRestScale;
+        private Quaternion energyCellRestRotation;
 
         public int Ammo => ammo;
         public bool Reloading => reloadCompleteAt > Time.time;
@@ -45,6 +49,7 @@ namespace Blacksite.Gameplay
             {
                 viewmodel = viewCamera.transform.Find("Pulse_Carbine_Viewmodel");
                 if (viewmodel != null) restingPosition = viewmodel.localPosition;
+                if (viewmodel != null) CacheEnergyCell();
                 CreateMuzzleFlash();
             }
         }
@@ -85,13 +90,76 @@ namespace Blacksite.Gameplay
             if (viewmodel == null) return;
             recoil = Mathf.MoveTowards(recoil, 0f, Time.deltaTime * 5.5f);
             sideRecoil = Mathf.MoveTowards(sideRecoil, 0f, Time.deltaTime * 8f);
-            float reloadDip = Reloading ?
-                Mathf.Sin(Mathf.PI * (Time.time - reloadStartedAt) / reloadSeconds) * .34f : 0f;
+            float reloadProgress = Reloading
+                ? Mathf.Clamp01((Time.time - reloadStartedAt) / reloadSeconds) : 1f;
+            float reloadAction = Reloading ? ReloadWeaponPose(reloadProgress) : 0f;
             viewmodel.localPosition = Vector3.Lerp(viewmodel.localPosition,
-                restingPosition + new Vector3(sideRecoil * .008f, -reloadDip - recoil * .025f,
-                    -recoil * .105f), Time.deltaTime * 22f);
-            viewmodel.localRotation = Quaternion.Euler(Reloading ? reloadDip * 60f : recoil * 8f,
-                sideRecoil, -sideRecoil * .55f);
+                restingPosition + new Vector3(sideRecoil * .008f + reloadAction * .035f,
+                    -reloadAction * .22f - recoil * .025f, -reloadAction * .12f - recoil * .105f),
+                Time.deltaTime * (Reloading ? 12f : 22f));
+            viewmodel.localRotation = Quaternion.Euler(reloadAction * 25f + recoil * 8f,
+                sideRecoil + reloadAction * 5f, -sideRecoil * .55f - reloadAction * 18f);
+            AnimateEnergyCell(reloadProgress);
+        }
+
+        private void CacheEnergyCell()
+        {
+            energyCell = viewmodel.Find("EnergyCell");
+            if (energyCell == null) return;
+            energyCellRestPosition = energyCell.localPosition;
+            energyCellRestScale = energyCell.localScale;
+            energyCellRestRotation = energyCell.localRotation;
+        }
+
+        private static float ReloadWeaponPose(float progress)
+        {
+            float lower = Mathf.SmoothStep(0f, 1f, Mathf.InverseLerp(0f, .22f, progress));
+            float raise = 1f - Mathf.SmoothStep(0f, 1f, Mathf.InverseLerp(.72f, 1f, progress));
+            return lower * raise;
+        }
+
+        private void AnimateEnergyCell(float progress)
+        {
+            if (energyCell == null) return;
+            if (!Reloading)
+            {
+                energyCell.localPosition = energyCellRestPosition;
+                energyCell.localScale = energyCellRestScale;
+                energyCell.localRotation = energyCellRestRotation;
+                return;
+            }
+
+            float eject = Mathf.SmoothStep(0f, 1f, Mathf.InverseLerp(.18f, .34f, progress));
+            float insert = Mathf.SmoothStep(0f, 1f, Mathf.InverseLerp(.49f, .69f, progress));
+            Vector3 removedPosition = energyCellRestPosition + new Vector3(0f, -.24f, 0f);
+            if (progress < .18f)
+            {
+                energyCell.localPosition = energyCellRestPosition;
+                energyCell.localScale = energyCellRestScale;
+            }
+            else if (progress < .34f)
+            {
+                energyCell.localPosition = Vector3.Lerp(energyCellRestPosition, removedPosition, eject);
+                energyCell.localScale = energyCellRestScale * Mathf.Lerp(1f, .12f, eject);
+            }
+            else if (progress < .49f)
+            {
+                energyCell.localPosition = removedPosition;
+                energyCell.localScale = energyCellRestScale * .12f;
+            }
+            else if (progress < .69f)
+            {
+                energyCell.localPosition = Vector3.Lerp(removedPosition, energyCellRestPosition, insert);
+                energyCell.localScale = energyCellRestScale * Mathf.Lerp(.12f, 1f, insert);
+            }
+            else
+            {
+                energyCell.localPosition = energyCellRestPosition;
+                energyCell.localScale = energyCellRestScale;
+            }
+
+            float cellTwist = Mathf.Sin(Mathf.Clamp01(progress / .7f) * Mathf.PI) * 24f;
+            energyCell.localRotation = energyCellRestRotation * Quaternion.Euler(0f, 0f, cellTwist);
         }
 
         private void CreateMuzzleFlash()
