@@ -31,6 +31,7 @@ namespace Blacksite.Gameplay
         private readonly bool[] hasFallbackRetreatPosition = new bool[4];
         private readonly float[] nextRetreatRouteAt = new float[4];
         private readonly float[] lastRetreatProgressAt = new float[4];
+        private readonly float[] retreatStartedAt = new float[4];
         private readonly Vector3[] lastRetreatPositions = new Vector3[4];
         private readonly float[] retreatPositionReachedAt = { -1f, -1f, -1f, -1f };
         private static readonly float[] RetreatAngles = { 0f, 45f, -45f, 90f, -90f, 135f, -135f, 180f };
@@ -300,7 +301,11 @@ namespace Blacksite.Gameplay
                 bool outOfSight = atRetreatPosition && !CanSeePlayer(i, agents[i].transform);
                 bool recoveryPosition = hidden || atRetreatPosition &&
                     Time.time - retreatPositionReachedAt[i] >= 3f && outOfSight;
-                health.RecoverWhileHidden(recoveryPosition, deltaTime);
+                // Cover and sight checks are useful for believable behavior, but
+                // a failed route or bad level occlusion must not strand an agent
+                // outside the encounter forever.
+                bool recoveryAllowed = recoveryPosition || Time.time - retreatStartedAt[i] >= 3f;
+                health.RecoverWhileHidden(recoveryAllowed, deltaTime);
                 if (health.HitsRemaining >= health.MaxHits)
                 {
                     retreating[i] = false;
@@ -343,6 +348,7 @@ namespace Blacksite.Gameplay
         private void BeginRetreat(int index)
         {
             retreating[index] = true;
+            retreatStartedAt[index] = Time.time;
             nextRetreatRouteAt[index] = Time.time + 6f;
             lastRetreatProgressAt[index] = Time.time;
             lastRetreatPositions[index] = agents[index].transform.position;

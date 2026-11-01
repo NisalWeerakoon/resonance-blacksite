@@ -5,8 +5,8 @@ namespace Blacksite.Gameplay
     public sealed class SubmissionAgentHealth : MonoBehaviour
     {
         [SerializeField, Min(1)] private int hitsToDisable = 8;
-        [SerializeField, Min(0f)] private float recoveryDelay = 4f;
-        [SerializeField, Min(.1f)] private float secondsPerRecoveredHit = 2.5f;
+        [SerializeField, Min(0f)] private float recoveryDelay = 2f;
+        [SerializeField, Min(.1f)] private float secondsPerRecoveredHit = 1f;
         private int hits;
         private float hitFlashUntil;
         private float lastHitAt = -100f;
