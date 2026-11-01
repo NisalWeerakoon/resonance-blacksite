@@ -1,4 +1,5 @@
 using UnityEngine;
+using Blacksite.Agents.Rift;
 
 namespace Blacksite.Gameplay
 {
@@ -13,7 +14,7 @@ namespace Blacksite.Gameplay
         private float recoveryProgress;
         private Transform visualRoot;
         private Vector3 visualRestPosition;
-        private Quaternion visualRestRotation;
+        private RiftProceduralAnimation riggedAnimation;
         private Renderer[] visualRenderers;
         private MaterialPropertyBlock[] restPropertyBlocks;
         private MaterialPropertyBlock[] flashPropertyBlocks;
@@ -40,7 +41,7 @@ namespace Blacksite.Gameplay
             while (visualRoot.parent != null && visualRoot.parent != transform)
                 visualRoot = visualRoot.parent;
             visualRestPosition = visualRoot.localPosition;
-            visualRestRotation = visualRoot.localRotation;
+            riggedAnimation = GetComponent<RiftProceduralAnimation>();
             restPropertyBlocks = new MaterialPropertyBlock[visualRenderers.Length];
             flashPropertyBlocks = new MaterialPropertyBlock[visualRenderers.Length];
             for (int i = 0; i < visualRenderers.Length; i++)
@@ -64,9 +65,7 @@ namespace Blacksite.Gameplay
             float kick = hitReactionUntil > Time.time
                 ? Mathf.Pow(1f - progress, 2f) * (1f + .2f * Mathf.Sin(progress * Mathf.PI * 3f)) : 0f;
             Vector3 offset = hitReactionDirection * (.11f * kick) + Vector3.up * (.025f * kick);
-            visualRoot.localPosition = visualRestPosition + offset;
-            visualRoot.localRotation = visualRestRotation * Quaternion.Euler(
-                -3f * kick, hitReactionSide * 4f * kick, -hitReactionSide * 17f * kick);
+            visualRoot.localPosition = visualRestPosition + offset + Vector3.right * (hitReactionSide * .025f * kick);
         }
 
         public void TakeHit()
@@ -88,6 +87,8 @@ namespace Blacksite.Gameplay
                 ? Mathf.Sign(localShotDirection.x) : Mathf.Abs(localImpactPoint.x) > .08f
                     ? -Mathf.Sign(localImpactPoint.x) : (Random.value < .5f ? -1f : 1f);
             hitReactionUntil = Time.time + HitReactionDuration;
+            if (riggedAnimation == null) riggedAnimation = GetComponent<RiftProceduralAnimation>();
+            if (riggedAnimation != null) riggedAnimation.TriggerHitReaction(hitReactionSide);
             visualFlashUntil = Time.time + HitFlashDuration;
             SetHitFlash(true);
             Debug.Log($"BLACKSITE_HIT agent={name} remaining={HitsRemaining}");

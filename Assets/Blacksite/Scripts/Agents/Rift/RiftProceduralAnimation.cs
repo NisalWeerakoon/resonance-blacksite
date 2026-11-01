@@ -49,6 +49,15 @@ namespace Blacksite.Agents.Rift
 
         private float phase;
         private float movementBlend;
+        private float hitReactionUntil;
+        private float hitReactionSide;
+        private const float HitReactionDuration = .3f;
+
+        public void TriggerHitReaction(float side)
+        {
+            hitReactionSide = Mathf.Sign(side);
+            hitReactionUntil = Time.time + HitReactionDuration;
+        }
 
         private void Awake()
         {
@@ -95,13 +104,17 @@ namespace Blacksite.Agents.Rift
             float step = Mathf.Sin(phase) * movementBlend;
             float oppositeStep = -step;
             float idleBreath = Mathf.Sin(phase) * idle;
+            float hitProgress = Mathf.Clamp01(1f - (hitReactionUntil - Time.time) / HitReactionDuration);
+            float hit = hitReactionUntil > Time.time
+                ? (1f - hitProgress) * (1f - hitProgress) : 0f;
 
             Pose(hips, hipsRest, new Vector3(idleBreath * 0.6f, 0f,
                 (step - oppositeStep) * 1.4f));
             Pose(spine, spineRest, new Vector3(-movementBlend * 2f + idleBreath * 0.8f, 0f, 0f));
-            Pose(chest, chestRest, new Vector3(-movementBlend * 3f + idleBreath * 1.2f, 0f,
-                (step - oppositeStep) * 1.2f));
-            Pose(head, headRest, new Vector3(idleBreath * 1.5f, Mathf.Sin(phase * 0.45f) * 2f * idle, 0f));
+            Pose(chest, chestRest, new Vector3(-movementBlend * 3f + idleBreath * 1.2f,
+                hitReactionSide * hit * 7f, (step - oppositeStep) * 1.2f));
+            Pose(head, headRest, new Vector3(idleBreath * 1.5f,
+                Mathf.Sin(phase * 0.45f) * 2f * idle - hitReactionSide * hit * 11f, 0f));
 
             float leftLeg = step * legSwingDegrees;
             float rightLeg = oppositeStep * legSwingDegrees;
@@ -115,13 +128,15 @@ namespace Blacksite.Agents.Rift
             Pose(footRight, footRightRest, new Vector3(-rightLeg * 0.3f, 0f, 0f));
 
             Pose(upperArmLeft, upperArmLeftRest,
-                new Vector3(-step * armSwingDegrees + idleBreath * 1.5f, 0f, 0f));
+                new Vector3(-step * armSwingDegrees + idleBreath * 1.5f + hit * 15f,
+                    0f, hitReactionSide * hit * 16f));
             Pose(upperArmRight, upperArmRightRest,
-                new Vector3(-oppositeStep * armSwingDegrees - idleBreath * 1.5f, 0f, 0f));
+                new Vector3(-oppositeStep * armSwingDegrees - idleBreath * 1.5f + hit * 12f,
+                    0f, -hitReactionSide * hit * 18f));
             Pose(forearmLeft, forearmLeftRest,
-                new Vector3(Mathf.Max(0f, -step) * 8f * movementBlend, 0f, 0f));
+                new Vector3(Mathf.Max(0f, -step) * 8f * movementBlend + hit * 18f, 0f, 0f));
             Pose(forearmRight, forearmRightRest,
-                new Vector3(Mathf.Max(0f, step) * 8f * movementBlend, 0f, 0f));
+                new Vector3(Mathf.Max(0f, step) * 8f * movementBlend + hit * 14f, 0f, 0f));
         }
 
         private Transform FindBone(string boneName)
