@@ -27,7 +27,7 @@ namespace Blacksite.Gameplay
                 break;
             }
             bool confirmed = target != null && target.gameObject.activeInHierarchy;
-            if (confirmed) target.TakeHit();
+            if (confirmed) target.TakeHit(end, direction);
             Draw(muzzle, end, Color.cyan, "PLAYER");
             return confirmed;
         }
