@@ -123,7 +123,7 @@ namespace Blacksite.Gameplay
             if (brain != null) brain.enabled = false;
             WaypointAgentMotor motor = GetComponent<WaypointAgentMotor>();
             if (motor != null) motor.enabled = false;
-            if (riggedAnimation != null) riggedAnimation.SetDeathPose(deathSide);
+            if (riggedAnimation != null) riggedAnimation.TriggerDeathAnimation(deathSide);
         }
 
         private void UpdateDeathAnimation()
