@@ -59,6 +59,26 @@ namespace Blacksite.Agents.Rift
             hitReactionUntil = Time.time + HitReactionDuration;
         }
 
+        public void SetDeathPose(float side)
+        {
+            float fallSide = Mathf.Sign(side);
+            Pose(hips, hipsRest, Vector3.zero);
+            Pose(spine, spineRest, Vector3.zero);
+            Pose(chest, chestRest, Vector3.zero);
+            Pose(head, headRest, Vector3.zero);
+            Pose(thighLeft, thighLeftRest, new Vector3(-12f, 0f, -fallSide * 8f));
+            Pose(thighRight, thighRightRest, new Vector3(18f, 0f, -fallSide * 5f));
+            Pose(shinLeft, shinLeftRest, new Vector3(28f, 0f, 0f));
+            Pose(shinRight, shinRightRest, new Vector3(10f, 0f, 0f));
+            Pose(footLeft, footLeftRest, new Vector3(-10f, 0f, 0f));
+            Pose(footRight, footRightRest, new Vector3(-8f, 0f, 0f));
+            Pose(upperArmLeft, upperArmLeftRest, new Vector3(-18f, 0f, fallSide * 32f));
+            Pose(upperArmRight, upperArmRightRest, new Vector3(12f, 0f, -fallSide * 28f));
+            Pose(forearmLeft, forearmLeftRest, new Vector3(-24f, 0f, 0f));
+            Pose(forearmRight, forearmRightRest, new Vector3(-18f, 0f, 0f));
+            enabled = false;
+        }
+
         private void Awake()
         {
             motor = GetComponent<WaypointAgentMotor>();

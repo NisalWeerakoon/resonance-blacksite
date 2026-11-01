@@ -26,7 +26,7 @@ namespace Blacksite.Gameplay
                 target = hit.collider.GetComponentInParent<SubmissionAgentHealth>();
                 break;
             }
-            bool confirmed = target != null && target.gameObject.activeInHierarchy;
+            bool confirmed = target != null && target.gameObject.activeInHierarchy && !target.IsDead;
             if (confirmed) target.TakeHit(end, direction);
             Draw(muzzle, end, Color.cyan, "PLAYER");
             return confirmed;

@@ -149,7 +149,7 @@ namespace Blacksite.Gameplay
         {
             for (int i = 0; i < 4; i++)
             {
-                if (agents[i] == null || !agents[i].gameObject.activeInHierarchy) continue;
+                if (agents[i] == null || agents[i].IsDead || !agents[i].gameObject.activeInHierarchy) continue;
                 playerVisible[i] = CanSeePlayer(i, agents[i].transform);
                 if (playerVisible[i]) RememberPlayerPosition(i, player.transform.position);
                 if (retreating[i])
@@ -222,7 +222,7 @@ namespace Blacksite.Gameplay
             float hearingRadiusSquared = hearingRadius * hearingRadius;
             for (int i = 0; i < Mathf.Min(agents.Length, 4); i++)
             {
-                if (agents[i] == null || !agents[i].gameObject.activeInHierarchy ||
+                if (agents[i] == null || agents[i].IsDead || !agents[i].gameObject.activeInHierarchy ||
                     (agents[i].transform.position - noise.Position).sqrMagnitude > hearingRadiusSquared)
                     continue;
                 RememberPlayerPosition(i, noise.Position);
@@ -248,6 +248,12 @@ namespace Blacksite.Gameplay
             {
                 SubmissionAgentHealth health = agents[i];
                 if (health == null) continue;
+                if (health.IsDead)
+                {
+                    ReleaseRetreatCover(i);
+                    retreating[i] = false;
+                    continue;
+                }
                 if (!health.gameObject.activeInHierarchy)
                 {
                     ReleaseRetreatCover(i);
@@ -563,7 +569,7 @@ namespace Blacksite.Gameplay
         private void RangedAttack(int index, float range, int damage, float cooldown,
             Color color)
         {
-            if (agents[index] == null || !agents[index].gameObject.activeInHierarchy ||
+            if (agents[index] == null || agents[index].IsDead || !agents[index].gameObject.activeInHierarchy ||
                 retreating[index] || !playerVisible[index] || Time.time < nextAttack[index]) return;
             Vector3 origin = agents[index].transform.position + Vector3.up * 1.45f;
             Vector3 destination = player.transform.position + Vector3.up;
@@ -580,6 +586,8 @@ namespace Blacksite.Gameplay
             if (player == null || player.IsDead || bastion == null ||
                 !bastion.gameObject.activeInHierarchy || retreating[1] || !playerVisible[1] ||
                 Time.time < nextAttack[1]) return;
+            SubmissionAgentHealth health = bastion.GetComponent<SubmissionAgentHealth>();
+            if (health == null || health.IsDead) return;
             Vector3 origin = bastion.transform.position + Vector3.up * 1.7f;
             Vector3 destination = player.transform.position + Vector3.up;
             if (Vector3.Distance(origin, destination) > 24f ||
@@ -612,11 +620,11 @@ namespace Blacksite.Gameplay
             float left = Screen.width - width - 14f;
             int activeCount = 0;
             foreach (SubmissionAgentHealth threat in agents)
-                if (threat != null && threat.gameObject.activeInHierarchy) activeCount++;
+                if (threat != null && !threat.IsDead && threat.gameObject.activeInHierarchy) activeCount++;
             GUI.Box(new Rect(left, 12f, width, 178f), $"THREAT RADAR — {activeCount}/4 ACTIVE");
             for (int i = 0; i < Mathf.Min(agents.Length, 4); i++)
             {
-                bool active = agents[i] != null && agents[i].gameObject.activeInHierarchy;
+                bool active = agents[i] != null && !agents[i].IsDead && agents[i].gameObject.activeInHierarchy;
                 string distance = active ?
                     $"{Vector3.Distance(player.transform.position, agents[i].transform.position):0}m • {agents[i].HitsRemaining}/{agents[i].MaxHits} armor" :
                     "DISABLED";

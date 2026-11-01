@@ -1,4 +1,6 @@
 using UnityEngine;
+using Blacksite.Agents;
+using Blacksite.Agents.Movement;
 using Blacksite.Agents.Rift;
 
 namespace Blacksite.Gameplay
@@ -14,6 +16,7 @@ namespace Blacksite.Gameplay
         private float recoveryProgress;
         private Transform visualRoot;
         private Vector3 visualRestPosition;
+        private Quaternion visualRestRotation;
         private RiftProceduralAnimation riggedAnimation;
         private Renderer[] visualRenderers;
         private MaterialPropertyBlock[] restPropertyBlocks;
@@ -23,12 +26,18 @@ namespace Blacksite.Gameplay
         private float hitReactionSide;
         private Vector3 hitReactionDirection;
         private bool hitFlashApplied;
+        private bool isDead;
+        private float deathStartedAt;
+        private float deathSide = 1f;
+        private Vector3 deathDirection;
         private const float HitReactionDuration = .38f;
         private const float HitFlashDuration = .11f;
+        private const float DeathAnimationDuration = 1.15f;
         private static readonly int BaseColorId = Shader.PropertyToID("_BaseColor");
         private static readonly int LegacyColorId = Shader.PropertyToID("_Color");
         public int HitsRemaining => Mathf.Max(0, hitsToDisable - hits);
         public int MaxHits => hitsToDisable;
+        public bool IsDead => isDead;
         public float HealthFraction => hitsToDisable <= 0 ? 0f : HitsRemaining / (float)hitsToDisable;
         public bool ShouldRetreat => HitsRemaining > 0 && HitsRemaining <= Mathf.CeilToInt(hitsToDisable * .375f);
 
@@ -41,6 +50,7 @@ namespace Blacksite.Gameplay
             while (visualRoot.parent != null && visualRoot.parent != transform)
                 visualRoot = visualRoot.parent;
             visualRestPosition = visualRoot.localPosition;
+            visualRestRotation = visualRoot.localRotation;
             riggedAnimation = GetComponent<RiftProceduralAnimation>();
             restPropertyBlocks = new MaterialPropertyBlock[visualRenderers.Length];
             flashPropertyBlocks = new MaterialPropertyBlock[visualRenderers.Length];
@@ -59,6 +69,11 @@ namespace Blacksite.Gameplay
         {
             if (hitFlashApplied && Time.time >= visualFlashUntil)
                 SetHitFlash(false);
+            if (isDead)
+            {
+                UpdateDeathAnimation();
+                return;
+            }
             if (visualRoot == null) return;
             float elapsed = HitReactionDuration - (hitReactionUntil - Time.time);
             float progress = Mathf.Clamp01(elapsed / HitReactionDuration);
@@ -75,6 +90,7 @@ namespace Blacksite.Gameplay
 
         public void TakeHit(Vector3 impactPoint, Vector3 shotDirection)
         {
+            if (isDead) return;
             hits++;
             lastHitAt = Time.time;
             recoveryProgress = 0f;
@@ -86,6 +102,8 @@ namespace Blacksite.Gameplay
             hitReactionSide = Mathf.Abs(localShotDirection.x) > .1f
                 ? Mathf.Sign(localShotDirection.x) : Mathf.Abs(localImpactPoint.x) > .08f
                     ? -Mathf.Sign(localImpactPoint.x) : (Random.value < .5f ? -1f : 1f);
+            deathSide = hitReactionSide;
+            deathDirection = hitReactionDirection;
             hitReactionUntil = Time.time + HitReactionDuration;
             if (riggedAnimation == null) riggedAnimation = GetComponent<RiftProceduralAnimation>();
             if (riggedAnimation != null) riggedAnimation.TriggerHitReaction(hitReactionSide);
@@ -94,7 +112,35 @@ namespace Blacksite.Gameplay
             Debug.Log($"BLACKSITE_HIT agent={name} remaining={HitsRemaining}");
             if (hits < hitsToDisable) return;
             Debug.Log($"BLACKSITE {name} disabled after {hits} pulse hits", this);
-            gameObject.SetActive(false);
+            BeginDeathAnimation();
+        }
+
+        private void BeginDeathAnimation()
+        {
+            isDead = true;
+            deathStartedAt = Time.time;
+            AgentBrainBase brain = GetComponent<AgentBrainBase>();
+            if (brain != null) brain.enabled = false;
+            WaypointAgentMotor motor = GetComponent<WaypointAgentMotor>();
+            if (motor != null) motor.enabled = false;
+            if (riggedAnimation != null) riggedAnimation.SetDeathPose(deathSide);
+        }
+
+        private void UpdateDeathAnimation()
+        {
+            float progress = Mathf.Clamp01((Time.time - deathStartedAt) / DeathAnimationDuration);
+            float fall = Mathf.SmoothStep(0f, 1f, Mathf.InverseLerp(.05f, .72f, progress));
+            float settle = progress > .72f
+                ? 1f - Mathf.SmoothStep(0f, 1f, Mathf.InverseLerp(.72f, 1f, progress)) : 0f;
+            if (visualRoot != null)
+            {
+                float roll = deathSide * 88f * fall;
+                float twitch = Mathf.Sin(progress * Mathf.PI * 9f) * settle * 4f;
+                visualRoot.localRotation = visualRestRotation * Quaternion.Euler(0f, twitch, roll);
+                visualRoot.localPosition = visualRestPosition + deathDirection * (.08f * fall) +
+                    Vector3.up * (Mathf.Sin(progress * Mathf.PI) * .04f);
+            }
+            if (progress >= 1f) gameObject.SetActive(false);
         }
 
         private void SetHitFlash(bool enabled)
@@ -108,7 +154,7 @@ namespace Blacksite.Gameplay
 
         public void RecoverWhileHidden(bool isHidden, float deltaTime)
         {
-            if (!isHidden || HitsRemaining >= hitsToDisable)
+            if (isDead || !isHidden || HitsRemaining >= hitsToDisable)
             {
                 recoveryProgress = 0f;
                 return;
@@ -124,7 +170,7 @@ namespace Blacksite.Gameplay
 
         private void OnGUI()
         {
-            if (!BlacksiteGameFlow.IsPlaying || Camera.main == null) return;
+            if (isDead || !BlacksiteGameFlow.IsPlaying || Camera.main == null) return;
             Vector3 screen = Camera.main.WorldToScreenPoint(transform.position + Vector3.up * 2.6f);
             if (screen.z <= 0f) return;
             float x = screen.x - 37f;
