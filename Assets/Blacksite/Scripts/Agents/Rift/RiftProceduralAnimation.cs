@@ -51,7 +51,11 @@ namespace Blacksite.Agents.Rift
         private float movementBlend;
         private float hitReactionUntil;
         private float hitReactionSide;
+        private bool deathAnimating;
+        private float deathStartedAt;
+        private float deathFallSide;
         private const float HitReactionDuration = .3f;
+        private const float DeathAnimationDuration = 1.15f;
 
         public void TriggerHitReaction(float side)
         {
@@ -59,24 +63,11 @@ namespace Blacksite.Agents.Rift
             hitReactionUntil = Time.time + HitReactionDuration;
         }
 
-        public void SetDeathPose(float side)
+        public void TriggerDeathAnimation(float side)
         {
-            float fallSide = Mathf.Sign(side);
-            Pose(hips, hipsRest, Vector3.zero);
-            Pose(spine, spineRest, Vector3.zero);
-            Pose(chest, chestRest, Vector3.zero);
-            Pose(head, headRest, Vector3.zero);
-            Pose(thighLeft, thighLeftRest, new Vector3(-12f, 0f, -fallSide * 8f));
-            Pose(thighRight, thighRightRest, new Vector3(18f, 0f, -fallSide * 5f));
-            Pose(shinLeft, shinLeftRest, new Vector3(28f, 0f, 0f));
-            Pose(shinRight, shinRightRest, new Vector3(10f, 0f, 0f));
-            Pose(footLeft, footLeftRest, new Vector3(-10f, 0f, 0f));
-            Pose(footRight, footRightRest, new Vector3(-8f, 0f, 0f));
-            Pose(upperArmLeft, upperArmLeftRest, new Vector3(-18f, 0f, fallSide * 32f));
-            Pose(upperArmRight, upperArmRightRest, new Vector3(12f, 0f, -fallSide * 28f));
-            Pose(forearmLeft, forearmLeftRest, new Vector3(-24f, 0f, 0f));
-            Pose(forearmRight, forearmRightRest, new Vector3(-18f, 0f, 0f));
-            enabled = false;
+            deathFallSide = Mathf.Sign(side);
+            deathStartedAt = Time.time;
+            deathAnimating = true;
         }
 
         private void Awake()
@@ -115,6 +106,11 @@ namespace Blacksite.Agents.Rift
 
         private void Update()
         {
+            if (deathAnimating)
+            {
+                UpdateDeathPose();
+                return;
+            }
             bool moving = motor != null && motor.IsMoving;
             movementBlend = Mathf.MoveTowards(movementBlend, moving ? 1f : 0f,
                 blendSpeed * Time.deltaTime);
@@ -159,12 +155,47 @@ namespace Blacksite.Agents.Rift
                 new Vector3(Mathf.Max(0f, step) * 8f * movementBlend + hit * 14f, 0f, 0f));
         }
 
+        private void UpdateDeathPose()
+        {
+            float progress = Mathf.Clamp01((Time.time - deathStartedAt) / DeathAnimationDuration);
+            float brace = 1f - SmoothSegment(progress, 0f, .25f);
+            float fall = SmoothSegment(progress, .08f, .72f);
+            float settle = SmoothSegment(progress, .55f, 1f);
+            float flail = Mathf.Sin(progress * Mathf.PI * 12f) * (1f - fall) * 8f;
+
+            Pose(hips, hipsRest, new Vector3(-5f * fall, deathFallSide * 5f * fall, deathFallSide * 8f * fall));
+            Pose(spine, spineRest, new Vector3(8f * fall, 0f, deathFallSide * 5f * fall));
+            Pose(chest, chestRest, new Vector3(12f * fall + 5f * brace,
+                deathFallSide * 8f * fall, deathFallSide * (8f * fall + flail * .4f)));
+            Pose(head, headRest, new Vector3(-8f * fall,
+                -deathFallSide * 12f * fall, -deathFallSide * 4f * fall));
+
+            Pose(thighLeft, thighLeftRest, new Vector3(-10f * fall, 0f, -deathFallSide * (12f + 4f * fall)));
+            Pose(thighRight, thighRightRest, new Vector3(18f * fall, 0f, -deathFallSide * (7f + 3f * fall)));
+            Pose(shinLeft, shinLeftRest, new Vector3(38f * fall, 0f, 0f));
+            Pose(shinRight, shinRightRest, new Vector3(52f * fall, 0f, 0f));
+            Pose(footLeft, footLeftRest, new Vector3(-18f * fall, 0f, 0f));
+            Pose(footRight, footRightRest, new Vector3(-22f * fall, 0f, 0f));
+
+            Pose(upperArmLeft, upperArmLeftRest,
+                new Vector3(-20f * fall + flail, 0f, deathFallSide * (20f + 15f * fall)));
+            Pose(upperArmRight, upperArmRightRest,
+                new Vector3(-12f * fall - flail, 0f, -deathFallSide * (18f + 12f * fall)));
+            Pose(forearmLeft, forearmLeftRest, new Vector3(-42f * fall * (1f - settle * .15f), 0f, 0f));
+            Pose(forearmRight, forearmRightRest, new Vector3(-35f * fall * (1f - settle * .15f), 0f, 0f));
+        }
+
         private Transform FindBone(string boneName)
         {
             foreach (var candidate in GetComponentsInChildren<Transform>(true))
                 if (string.Equals(candidate.name, boneName, StringComparison.OrdinalIgnoreCase))
                     return candidate;
             return null;
+        }
+
+        private static float SmoothSegment(float value, float start, float end)
+        {
+            return Mathf.SmoothStep(0f, 1f, Mathf.InverseLerp(start, end, value));
         }
 
         private static Quaternion Rest(Transform bone) => bone != null ? bone.localRotation : Quaternion.identity;
