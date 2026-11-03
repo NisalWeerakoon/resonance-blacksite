@@ -334,7 +334,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 8b1c529e593d0d94ca0865251c9de9e9, type: 3}
   m_Name: 
   m_EditorClassIdentifier: Blacksite.Gameplay::Blacksite.Gameplay.SubmissionAgentHealth
-  hitsToDisable: 3
+  hitsToDisable: 8
 --- !u!1 &10251420
 GameObject:
   m_ObjectHideFlags: 0
@@ -35513,7 +35513,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 8b1c529e593d0d94ca0865251c9de9e9, type: 3}
   m_Name: 
   m_EditorClassIdentifier: Blacksite.Gameplay::Blacksite.Gameplay.SubmissionAgentHealth
-  hitsToDisable: 3
+  hitsToDisable: 8
 --- !u!1 &1417830572
 GameObject:
   m_ObjectHideFlags: 0
@@ -47210,7 +47210,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 8b1c529e593d0d94ca0865251c9de9e9, type: 3}
   m_Name: 
   m_EditorClassIdentifier: Blacksite.Gameplay::Blacksite.Gameplay.SubmissionAgentHealth
-  hitsToDisable: 3
+  hitsToDisable: 8
 --- !u!1 &1962323037
 GameObject:
   m_ObjectHideFlags: 0
@@ -49990,7 +49990,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 8b1c529e593d0d94ca0865251c9de9e9, type: 3}
   m_Name: 
   m_EditorClassIdentifier: Blacksite.Gameplay::Blacksite.Gameplay.SubmissionAgentHealth
-  hitsToDisable: 3
+  hitsToDisable: 8
 --- !u!1 &2078847373
 GameObject:
   m_ObjectHideFlags: 0
